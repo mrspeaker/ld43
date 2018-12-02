@@ -23,6 +23,8 @@ class Grill {
         station.addMeat(patty);
         station.grilling = true;
         this.removePatty(patty);
+        station.griller.anims.play("grill");
+        station.griller._data.working = true;
       }
     }
 
@@ -39,6 +41,7 @@ class Grill {
     const station = this.grillStations.find(s => !s.griller);
     if (station) {
       station.addGriller(peep);
+      peep.anims.play("grill_idle");
     } else {
       console.warn("no room for you, griller...");
     }

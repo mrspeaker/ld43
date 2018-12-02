@@ -22,7 +22,9 @@ class Game {
     this.grill = new Grill();
 
     this.produce = [];
+    this.produce_in_transit = [];
     this.cooked_meat = [];
+    this.cooked_meat_in_transit = [];
     this.burgers = [];
 
     this.mood = new Mood();
@@ -30,6 +32,7 @@ class Game {
     this.nextCar = 8000;
 
     this.loveShack = [];
+    this.loveShackTime = 0;
 
     Events.on("plotHarvested", this.onPlotHarvested.bind(this));
     Events.on("groundPeep", this.onGroundPeep.bind(this));
@@ -37,6 +40,8 @@ class Game {
     Events.on("grillComplete", this.onGrillComplete.bind(this));
     Events.on("orderFilled", this.onOrderFilled.bind(this));
     Events.on("carAtWindow", this.onCarAtWindow.bind(this));
+    Events.on("cookedMeatHasArrived", this.onMeatHasArrived.bind(this));
+    Events.on("produceHasArrived", this.onProduceHasArrived.bind(this));
   }
 
   onPlotHarvested(plot) {
@@ -44,7 +49,7 @@ class Game {
       f.peepType = PeepTypes.NOOB;
     });
     const crop = new Crop();
-    this.produce.push(crop);
+    this.produce_in_transit.push(crop);
     Events.emit("newCrop", crop);
   }
 
@@ -62,19 +67,48 @@ class Game {
     Events.emit("newPeep", baby, peep1, peep2);
   }
 
-  addLoveShacker(peep) {
-    this.loveShack.push(peep);
+  addLoveShacker(peepSprite) {
+    if (this.loveShackTime > 0) {
+      console.log("no room at the inn", peepSprite._data.peepType);
+      Events.emit("jobRejection", peepSprite);
+      return;
+    }
+
+    this.loveShack.push(peepSprite);
+    peepSprite._data.onChangeJobs = () => {
+      this.loveShack = this.loveShack.filter(p => p === this);
+    };
+    peepSprite.anims.play("idle");
     if (this.loveShack.length >= 2) {
-      const baby = new Peep();
-      this.peeps.push(baby);
-      Events.emit("newPeep", baby, this.loveShack[0], this.loveShack[1]);
+      Events.emit("loveStarts");
+      this.loveShack.forEach(l => {
+        l._data.working = true;
+        l.visible = false;
+      });
+      this.loveShackTime = 4000;
     }
   }
 
   onGrillComplete(meat_stats) {
     const meat = new CookedMeat();
-    this.cooked_meat.push(meat);
+    this.cooked_meat_in_transit.push(meat);
     Events.emit("newCookedMeat", meat);
+  }
+
+  onMeatHasArrived(meat) {
+    // Meeded to calc queue lenght
+    this.cooked_meat_in_transit = this.cooked_meat_in_transit.filter(
+      m => m != meat
+    );
+    this.cooked_meat.push(meat);
+  }
+
+  onProduceHasArrived(meat) {
+    // Meeded to calc queue lenght
+    this.produce_in_transit = this.produce_in_transit.filter(
+      m => m != meat
+    );
+    this.produce.push(meat);
   }
 
   onOrderFilled(burger) {
@@ -125,8 +159,17 @@ class Game {
     if ((this.nextCar -= dt) < 0 && this.cars.length == 0) {
       this.sendACar();
     }
+
+    if (this.loveShackTime > 0) {
+      if ((this.loveShackTime -= dt) < 0) {
+        const baby = new Peep();
+        this.peeps.push(baby);
+        Events.emit("newPeep", baby, ...this.loveShack);
+        this.loveShack = [];
+      }
+    }
   }
-  tick () {
+  tick() {
     this.farm.tick();
     this.grinder.tick();
     this.grill.tick();

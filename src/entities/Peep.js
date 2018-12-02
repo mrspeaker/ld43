@@ -9,7 +9,7 @@ export class PeepSprite extends Phaser.GameObjects.Sprite {
     this.setInteractive();
     // NOTE: "data" is used internally in Phaser :()
     this._data = data;
-    this.anims.play("walk");
+    data._sprite = this; // Sorry :)
   }
 }
 
@@ -20,6 +20,7 @@ class Peep {
       .toUpperCase();
     this.type = "PEEP";
     this.peepType = PeepTypes.NOOB;
+    this.working = true; // Born working, yo.
     this.hp = 0;
     this.botany = 0;
     this.culinary = 0;

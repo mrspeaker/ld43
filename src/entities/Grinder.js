@@ -21,6 +21,9 @@ class Grinder {
       time: 0,
       peep
     });
+    Events.emit("grindingPeep", peep);
+    peep.working = true;
+    peep._sprite.anims.play("grinded");
   }
 }
 

@@ -10,7 +10,7 @@ class Farm {
   createPlots() {
     [...Array(this.NUM_PLOTS)].forEach((_, i) => {
       const p = new Plot();
-      Events.emit("newPlot", p, (i % 3) * 32 + 16, (i / 3|0) * 32 + 160);
+      Events.emit("newPlot", p, (i % 3) * 32 + 16, ((i / 3) | 0) * 32 + 160);
       this.plots.push(p);
     });
   }

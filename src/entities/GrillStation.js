@@ -18,11 +18,16 @@ class GrillStation {
       this.grilling = false;
       this.grillTime = 5;
       this.meat = false;
+      this.griller.anims.play("grill_idle");
+      this.griller._data.working = false;
       Events.emit("grillComplete", { goodness: 1 });
     }
   }
   addGriller(peep) {
     this.griller = peep;
+    this.griller._data.onChangeJobs = () => {
+      this.griller = null;
+    };
   }
   addMeat(meat) {
     this.meat = meat;

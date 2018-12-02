@@ -55,8 +55,8 @@ class Main extends Phaser.Scene {
     this.load.image("char", "res/char1.png");
     this.load.image("roof", "res/roof.png");
     this.load.spritesheet("peeps", "res/peeps.png", {
-      frameWidth: 8,
-      frameHeight: 12
+      frameWidth: 12,
+      frameHeight: 14
     });
     this.load.spritesheet("chars", "res/chars.png", {
       frameWidth: 16,
@@ -64,10 +64,22 @@ class Main extends Phaser.Scene {
     });
 
     this.load.image("font", "res/font.png");
+
+    this.load.audio("mouse", "res/audio/click.mp3");
+    this.load.audio("grinded", "res/audio/crunch.mp3");
+    this.load.audio("pop", "res/audio/pop.mp3");
+    this.load.audio("nope", "res/audio/nope.mp3");
   }
 
   create() {
     this.game = new Game();
+
+    this.audio = {
+      mouse: this.sound.add("mouse"),
+      grinded: this.sound.add("grinded"),
+      pop: this.sound.add("pop"),
+      nope: this.sound.add("nope")
+    };
 
     this.add.image(120, 160, "bg");
 
@@ -82,10 +94,66 @@ class Main extends Phaser.Scene {
     this.game.farm.createPlots();
 
     this.anims.create({
+      key: "idle",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 0, end: 0 }),
+      frameRate: 10,
+      repeat: -1
+    });
+
+    this.anims.create({
       key: "walk",
       frames: this.anims.generateFrameNumbers("peeps", { start: 0, end: 1 }),
       frameRate: 10,
       repeat: -1
+    });
+
+    this.anims.create({
+      key: "farm_idle",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 5, end: 5 }),
+      frameRate: 5,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: "farm",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 5, end: 6 }),
+      frameRate: 5,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: "grill_idle",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 10, end: 10 }),
+      frameRate: 5,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: "grill",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 10, end: 11 }),
+      frameRate: 5,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: "grinded",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 15, end: 24 }),
+      frameRate: 10,
+      repeat: 0
+    });
+
+    this.anims.create({
+      key: "love",
+      frames: this.anims.generateFrameNumbers("chars", { start: 25, end: 29 }),
+      frameRate: 8,
+      repeat: -1
+    });
+
+    this.anims.create({
+      key: "growup",
+      frames: this.anims.generateFrameNumbers("peeps", { start: 25, end: 29 }),
+      frameRate: 1,
+      repeat: 0
     });
 
     this.anims.create({
@@ -146,6 +214,9 @@ class Main extends Phaser.Scene {
     fg.add(this.add.image(123, 240, "roof"));
     fg.depth = 500;
 
+    this.loveSprite = this.add.sprite(220, 50, "chars");
+    this.loveSprite.anims.play("love");
+    this.loveSprite.visible = false;
     this.hoverHelper = this.add.graphics();
 
     this.handlePointer(mouse);
@@ -179,7 +250,12 @@ class Main extends Phaser.Scene {
           if (collide) {
             this.hoverHelper.clear();
             this.hoverHelper.lineStyle(1, 0x00ff00, 1);
-            this.hoverHelper.strokeRect(rect.x, rect.y, rect.width, rect.height);
+            this.hoverHelper.strokeRect(
+              rect.x,
+              rect.y,
+              rect.width,
+              rect.height
+            );
             this.hoverHelper.visible = true;
           }
         });
@@ -194,6 +270,8 @@ class Main extends Phaser.Scene {
       // Nothing selected
       if (!selected) {
         selected = gameObject;
+        this.audio.mouse.play();
+
         dragSelected = false;
         gameObject.setTint(0x00ff00);
         this.displayInfo(gameObject);
@@ -214,6 +292,13 @@ class Main extends Phaser.Scene {
         gameObject._data.draggable &&
         selected === gameObject
       ) {
+        if (gameObject._data && gameObject._data.working) {
+          console.log("sorry, no go.");
+          selected.clearTint();
+          selected = null;
+          this.audio.nope.play();
+          return;
+        }
         dragSelected = true;
         if (gameObject._timeline) {
           gameObject._timeline.stop();
@@ -240,6 +325,8 @@ class Main extends Phaser.Scene {
       }
       // Clicked on a new peep
       selected = gameObject;
+      this.audio.mouse.play();
+
       dragSelected = false;
       gameObject.setTint(0x00ff00);
       this.displayInfo(gameObject);
@@ -299,6 +386,7 @@ class Main extends Phaser.Scene {
     const p = new PeepSprite(this, 0, 0, peepData);
     this.assignPeep(p, PeepTypes.NOOB);
     this.add.existing(p);
+    p.anims.play("growup");
     return p;
   }
 
@@ -337,6 +425,10 @@ class Main extends Phaser.Scene {
   }
 
   revertDrag(peep) {
+    if (peep._data._lastPeepType) {
+      peep._data.peepType = peep._data._lastPeepType;
+    }
+
     const t = this.tweens.createTimeline();
     t.add({
       targets: peep,
@@ -348,6 +440,14 @@ class Main extends Phaser.Scene {
   }
 
   assignPeep(peep, type) {
+    peep._data._lastPeepType = peep._data.peepType;
+
+    if (peep._data.onChangeJobs) {
+      console.log("already doing something?");
+      peep._data.onChangeJobs();
+      peep._data.onChangeJobs = null;
+    }
+
     peep._data.peepType = type;
     if (type == PeepTypes.NOOB) {
       const [minX, minY, maxX, maxY] = Areas.Incubator;
@@ -355,7 +455,7 @@ class Main extends Phaser.Scene {
       peep.y = Phaser.Math.Between(minY, maxY);
     }
     if (type == PeepTypes.UNASSIGNED) {
-      this.growUp(peep);
+      this.waitForAJob(peep);
     }
     if (type == PeepTypes.FARMER) {
       this.game.addFarmer(peep._data);
@@ -379,27 +479,14 @@ class Main extends Phaser.Scene {
     dialog.visible = true;
   }
 
-  // TODO: Not used anymore
-  droppedOnAMate(peep) {
-    const peepBounds = peep.getBounds();
-    for (let i = 0; i < this.peeps.length; i++) {
-      const peep2 = this.peeps[i];
-      if (peep2 === peep) continue;
-      const collide = Phaser.Geom.Rectangle.Overlaps(
-        peepBounds,
-        peep2.getBounds()
-      );
-      if (collide) {
-        return peep2;
-      }
-    }
-    return null;
-  }
-
-  growUp(peep) {
+  waitForAJob(peepSprite) {
+    peepSprite._data.working = false;
     const gs = this.peeps.filter(
       p => p._data.peepType === PeepTypes.UNASSIGNED
     );
+
+    // TODO: Figure out if specialty..
+    peepSprite.anims.play("walk");
 
     const timeline = this.tweens.createTimeline();
 
@@ -407,47 +494,57 @@ class Main extends Phaser.Scene {
     let yo = Areas.Queue[1] + 16;
 
     timeline.add({
-      targets: peep,
+      targets: peepSprite,
       x: xo,
       y: yo
     });
 
     timeline.add({
-      targets: peep,
+      targets: peepSprite,
       x: (xo -= 85),
       duration: 2000
     });
 
     timeline.add({
-      targets: peep,
+      targets: peepSprite,
       y: (yo += 15),
       duration: 500
     });
 
     timeline.add({
-      targets: peep,
+      targets: peepSprite,
       x: (xo += 80),
       duration: 2000
     });
 
     timeline.add({
-      targets: peep,
+      targets: peepSprite,
       y: (yo += 20),
       duration: 500
     });
 
     timeline.add({
-      targets: peep,
+      targets: peepSprite,
       x: 20 + (gs.length - 1) * 10,
-      duration: 500
+      duration: 500,
+      onComplete: () => {
+        // TODO: Figure out if specialty..
+        peepSprite.anims.play("idle");
+      }
     });
 
-    peep._timeline = timeline;
+    peepSprite._timeline = timeline;
 
     timeline.play();
   }
 
   handleCustomGameEvents() {
+    Events.on("jobRejection", peep => {
+      this.revertDrag(peep);
+    });
+    Events.on("loveStarts", () => {
+      this.loveSprite.visible = true;
+    });
     Events.on("newCrop", crop => {
       const sprite = new CropSprite(
         this,
@@ -457,12 +554,16 @@ class Main extends Phaser.Scene {
       );
       this.add.existing(sprite);
       crop._sprite = sprite;
-
+      const activeProduce =
+        this.game.produce.length + this.game.produce_in_transit.length;
       const t = this.tweens.createTimeline();
       t.add({
         targets: sprite,
-        y: Areas.CropSpawn[1] + 96 - this.game.produce.length * 16,
-        duration: 5000
+        y: Areas.CropSpawn[1] + 96 - activeProduce * 16,
+        duration: 5000,
+        onComplete: () => {
+          Events.emit("produceHasArrived", crop);
+        }
       });
       t.play();
     });
@@ -485,10 +586,15 @@ class Main extends Phaser.Scene {
       this.add.existing(sprite);
       meat._sprite = sprite;
       const t = this.tweens.createTimeline();
+      const activePatties =
+        this.game.cooked_meat.length + this.game.cooked_meat_in_transit.length;
       t.add({
         targets: sprite,
-        y: Areas.CookedSpawn[1] + 96 - this.game.cooked_meat.length * 16,
-        duration: 5000
+        y: Areas.CookedSpawn[1] + 96 - activePatties * 16,
+        duration: 5000,
+        onComplete: () => {
+          Events.emit("cookedMeatHasArrived", meat);
+        }
       });
       t.play();
     });
@@ -534,8 +640,14 @@ class Main extends Phaser.Scene {
     Events.on("newPeep", (baby, parent1, parent2) => {
       const peep = this.createAPeepSprite(baby);
       this.peeps.push(peep);
+      this.loveSprite.visible = false;
+      parent1.visible = true;
+      parent2.visible = true;
       this.assignPeep(parent1, PeepTypes.UNASSIGNED);
-      this.assignPeep(parent2, PeepTypes.UNASSIGNED);
+      // HACK: stagger return to queue
+      setTimeout(() => {
+        this.assignPeep(parent2, PeepTypes.UNASSIGNED);
+      }, 800);
     });
 
     Events.on("newCar", car => {
@@ -562,8 +674,9 @@ class Main extends Phaser.Scene {
 
       car.onOrderFilled = burger => {
         const t = this.tweens.createTimeline();
+        burger._sprite.visible = false;
         t.add({
-          targets: [sprite, burger._sprite],
+          targets: [sprite],
           x: 320,
           duration: 4000,
           ease: "CubicOut",
@@ -603,6 +716,13 @@ class Main extends Phaser.Scene {
         }
       });
       t.play();
+    });
+
+    Events.on("grindingPeep", () => {
+      this.audio.grinded.play();
+    });
+    Events.on("groundPeep", () => {
+      this.audio.pop.play();
     });
   }
 }
