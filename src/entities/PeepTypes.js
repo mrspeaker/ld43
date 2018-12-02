@@ -3,7 +3,7 @@ export default {
   NOOB: 0,
   UNASSIGNED: 1,
   FARMER: 2,
-  CHEF: 3,
+  GRILLER: 3,
   MEAT: 4,
   MATE: 5
 };

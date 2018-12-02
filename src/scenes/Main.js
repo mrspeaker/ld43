@@ -1,9 +1,12 @@
 import { PeepSprite } from "../entities/Peep.js";
 import { CropSprite } from "../entities/Crop.js";
+import { CookedMeatSprite } from "../entities/CookedMeat.js";
 import { PattySprite } from "../entities/Patty.js";
+import Car from "../entities/Car.js";
 import PeepTypes from "../entities/PeepTypes.js";
 import Game from "../Game.js";
 import Events from "../Events.js";
+
 
 const Phaser = window.Phaser;
 
@@ -18,7 +21,8 @@ const Areas = {
   Kitchen: [140, 147, 229, 237],
   Grinder: [148, 141, 223, 275],
   CropSpawn: [118, 154],
-  PattySpawn: [210, 290]
+  PattySpawn: [210, 290],
+  CookedSpawn: [140, 155]
 };
 
 class Main extends Phaser.Scene {
@@ -33,13 +37,7 @@ class Main extends Phaser.Scene {
         crop
       );
       this.add.existing(sprite);
-      // sprite.on("pointerdown", () => {
-      //   sprite.setTint(0xff0000);
-      //   this.displayInfo(sprite);
-      // });
-      // sprite.on("pointerup", () => {
-      //   sprite.clearTint();
-      // });
+
       const t = this.tweens.createTimeline();
       t.add({
         targets: sprite,
@@ -49,7 +47,34 @@ class Main extends Phaser.Scene {
       t.play();
     });
 
+    Events.on("newCookedMeat", meat => {
+      const sprite = new CookedMeatSprite(
+        this,
+        Areas.CookedSpawn[0],
+        Areas.CookedSpawn[1],
+        meat
+      );
+      this.add.existing(sprite);
+      meat._sprite = sprite;
+      const t = this.tweens.createTimeline();
+      t.add({
+        targets: sprite,
+        y: Areas.CookedSpawn[1] + 138 - (this.game.cooked_meat.length - 1) * 16,
+        duration: 5000
+      });
+      if (this.game.cooked_meat.length <= 1) {
+        t.add({
+          targets: sprite,
+          x: Areas.CookedSpawn[0] - 20,
+          duration: 500
+        });
+      }
+      t.play();
+    });
+
     Events.on("newPattie", (peep, patty) => {
+      // Turn a peep into a patty
+      patty.readyToCook = false;
       this.peeps = this.peeps.filter(p => {
         if (p._data === peep) {
           p.destroy();
@@ -61,6 +86,7 @@ class Main extends Phaser.Scene {
             patty
           );
           this.add.existing(sprite);
+          patty._sprite = sprite;
 
           const t = this.tweens.createTimeline();
           t.add({
@@ -70,8 +96,11 @@ class Main extends Phaser.Scene {
           });
           t.add({
             targets: sprite,
-            y: Areas.PattySpawn[1] - 146 + (this.game.patties.length * 16),
-            duration: 4000
+            y: Areas.PattySpawn[1] - 146 + this.game.grill.patties.length * 16,
+            duration: 4000,
+            onComplete: () => {
+              patty.readyToCook = true;
+            }
           });
           t.play();
 
@@ -87,10 +116,11 @@ class Main extends Phaser.Scene {
       this.assignPeep(parent1, PeepTypes.UNASSIGNED);
       this.assignPeep(parent2, PeepTypes.UNASSIGNED);
     });
-
   }
   preload() {
     this.load.image("bg", "res/sgb.png");
+    this.load.image("bgfg", "res/sgbgb.png");
+    this.load.image("car", "res/car.png");
     this.load.image("char", "res/char1.png");
     this.load.spritesheet("peeps", "res/peeps.png", {
       frameWidth: 8,
@@ -122,6 +152,30 @@ class Main extends Phaser.Scene {
       repeat: -1
     });
 
+    this.anims.create({
+      key: "belt_down",
+      frames: this.anims.generateFrameNumbers("chars", { start: 20, end: 23 }),
+      frameRate: 3,
+      repeat: -1
+    });
+
+    // Make some belts
+    for (let i = 0; i < 8; i++) {
+      if (i < 7) {
+        const b1 = this.add.sprite(120, 160 + i * 16 - 8, "chars");
+        b1.anims.play("belt_down");
+      }
+      const b2 = this.add.sprite(120 + 16, 160 + i * 16 - 8, "chars");
+      b2.anims.play("belt_down", false, 1);
+      const b3 = this.add.sprite(216 + 16, 160 + i * 16 - 8, "chars");
+      b3.setScale(1, -1);
+      b3.anims.play("belt_down");
+    }
+    for (let i = 0; i < 2; i++) {
+      const s1 = this.add.sprite(120 + i * 16, 279, "chars");
+      s1.setRotation(Math.PI / 2);
+      s1.anims.play("belt_down");
+    }
     const font_config = {
       image: "font",
       width: 6,
@@ -172,7 +226,7 @@ class Main extends Phaser.Scene {
     }, 1000);
 
     this.add.bitmapText(0, 84, "font", "JOB SEEKERS");
-    this.add.bitmapText(176, 126, "font", "INCUBATOR");
+    this.add.bitmapText(176, 126, "font", "LOVE SHACK");
     this.add.bitmapText(0, 146, "font", "THE FARM");
     this.add.bitmapText(156, 156, "font", "THE GRILL");
     this.add.bitmapText(152, 246, "font", "THE GRINDER");
@@ -181,6 +235,7 @@ class Main extends Phaser.Scene {
       return this.createAPeepSprite(this.game.peeps[i]);
     });
 
+    this.add.image(176, 56, "bgfg");
     let selected = null;
     let dragSelected = false;
 
@@ -247,6 +302,17 @@ class Main extends Phaser.Scene {
         selected.y = p.y;
       }
     });
+
+    const car = this.add.sprite(-100, 300, "car");
+    const t = this.tweens.createTimeline();
+    t.add({
+      targets: car,
+      x: 50,
+      duration: 3000,
+      ease: "Cubic"
+    });
+    t.play();
+
   }
 
   createAPeepSprite(peepData) {
@@ -277,7 +343,7 @@ class Main extends Phaser.Scene {
       return PeepTypes.FARMER;
     }
     if (isIn(peep, ...Areas.Kitchen)) {
-      return PeepTypes.CHEF;
+      return PeepTypes.GRILLER;
     }
     if (isIn(peep, ...Areas.Grinder)) {
       return PeepTypes.MEAT;
@@ -328,12 +394,17 @@ class Main extends Phaser.Scene {
     if (type == PeepTypes.MATE) {
       console.log("MATES");
     }
+    if (type == PeepTypes.GRILLER) {
+      console.log("yeah?");
+      this.game.addGriller(peep);
+    }
   }
 
   displayInfo(ent) {
     const { dialog } = this;
     const txt = dialog.first;
-    txt.text = ent._data.name + " - " + ent._data.type + " " + ent._data.peepType;
+    txt.text =
+      ent._data.name + " - " + ent._data.type + " " + ent._data.peepType;
     dialog.visible = true;
   }
 
@@ -354,7 +425,9 @@ class Main extends Phaser.Scene {
   }
 
   growUp(peep) {
-    const gs = this.peeps.filter(p => p._data.peepType === PeepTypes.UNASSIGNED);
+    const gs = this.peeps.filter(
+      p => p._data.peepType === PeepTypes.UNASSIGNED
+    );
 
     const timeline = this.tweens.createTimeline();
 
