@@ -18,9 +18,9 @@ const isIn = (go, minX, minY, maxX, maxY) => {
 const Areas = {
   Incubator: [120, 88, 190, 136],
   Queue: [3, 81, 110, 141],
-  Farm: [1, 144, 113, 220],
+  Farm: [3, 146, 111, 221],
   Kitchen: [140, 147, 229, 237],
-  Grinder: [148, 141, 223, 275],
+  Grinder: [148, 239, 223, 275],
   LoveShack: [196, 62, 236, 123],
   CropSpawn: [118, 144],
   PattySpawn: [210, 290],
@@ -29,12 +29,23 @@ const Areas = {
   CarSpawn: [-100, 300]
 };
 
+const HoverableAreas = [
+  Areas.Queue,
+  Areas.Farm,
+  Areas.Kitchen,
+  Areas.Grinder,
+  Areas.LoveShack
+].map(
+  ([x1, y1, x2, y2]) => new Phaser.Geom.Rectangle(x1, y1, x2 - x1, y2 - y1)
+);
+
 class Main extends Phaser.Scene {
   constructor() {
     super({ key: "Main" });
 
     // TODO: this is mostly to sync the display
     // with the Game, but it didn't work very nicely ;)
+    // TODO: REFACToR!
     this.handleCustomGameEvents();
   }
   preload() {
@@ -122,7 +133,7 @@ class Main extends Phaser.Scene {
 
     this.add.bitmapText(0, 84, "font", "JOB SEEKERS");
     this.add.bitmapText(176, 126, "font", "LOVE SHACK");
-    this.add.bitmapText(0, 146, "font", "THE FARM");
+    this.add.bitmapText(1, 147, "font", "THE FARM");
     this.add.bitmapText(156, 156, "font", "THE GRILL");
     this.add.bitmapText(153, 259, "font", "THE GRINDER");
 
@@ -135,8 +146,9 @@ class Main extends Phaser.Scene {
     fg.add(this.add.image(123, 240, "roof"));
     fg.depth = 500;
 
-    this.handlePointer(mouse);
+    this.hoverHelper = this.add.graphics();
 
+    this.handlePointer(mouse);
   }
 
   update(time, dt) {
@@ -157,6 +169,21 @@ class Main extends Phaser.Scene {
     this.input.on("pointermove", pointer => {
       mouse.x = pointer.x;
       mouse.y = pointer.y;
+
+      this.hoverHelper.visible = false;
+      if (dragSelected) {
+        // Check if hovering
+        const mouseBounds = mouse.getBounds();
+        HoverableAreas.forEach(rect => {
+          const collide = Phaser.Geom.Rectangle.Overlaps(mouseBounds, rect);
+          if (collide) {
+            this.hoverHelper.clear();
+            this.hoverHelper.lineStyle(1, 0x00ff00, 1);
+            this.hoverHelper.strokeRect(rect.x, rect.y, rect.width, rect.height);
+            this.hoverHelper.visible = true;
+          }
+        });
+      }
     });
 
     this.input.on("pointerdown", pointer => {
@@ -192,6 +219,7 @@ class Main extends Phaser.Scene {
       }
 
       selected.clearTint();
+      dragSelected = false;
 
       if (dragSelected && gameObject._data.draggable) {
         this.assignFromXY(selected);
@@ -206,7 +234,6 @@ class Main extends Phaser.Scene {
       }
       // Clicked on a new peep
       selected = gameObject;
-      dragSelected = false;
       gameObject.setTint(0xff0000);
       this.displayInfo(gameObject);
     });
