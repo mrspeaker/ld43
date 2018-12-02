@@ -5,15 +5,21 @@ export class PlotSprite extends Phaser.GameObjects.Sprite {
     super(scene, x, y, "chars");
     this.setFrame(15);
     this.setOrigin(0, 0);
+    this.setInteractive();
     this._data = data;
   }
 }
 
 class Plot {
   constructor() {
+    this.type = "FARM";
     this.progress = 0;
     this.farmers = [];
     this.tilling = true;
+
+    this.name = "PL_" + btoa(Math.random() * 1000)
+      .substr((Math.random() * 4) | 0, 6)
+      .toUpperCase();
   }
   tick() {
     const { tilling, farmers } = this;

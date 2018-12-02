@@ -117,7 +117,7 @@ class Main extends Phaser.Scene {
     dialog.add(title);
     title.setTint(0xff00ff);
 
-    this.add.bitmapText(0, 10, "font", "SHAREHOLDERS ARE");
+    this.add.bitmapText(0, 10, "font", "STEAKHOLDERS ARE");
     const mood = this.add.bitmapText(100, 10, "font", this.game.mood.mood());
     mood.setTint(0xff00ff);
 
@@ -195,7 +195,7 @@ class Main extends Phaser.Scene {
       if (!selected) {
         selected = gameObject;
         dragSelected = false;
-        gameObject.setTint(0xff0000);
+        gameObject.setTint(0x00ff00);
         this.displayInfo(gameObject);
 
         gameObject.downX = pointer.downX;
@@ -215,14 +215,19 @@ class Main extends Phaser.Scene {
         selected === gameObject
       ) {
         dragSelected = true;
+        if (gameObject._timeline) {
+          gameObject._timeline.stop();
+          gameObject._timeline = null;
+        }
+        gameObject.setTint(0xff00ff);
         return;
       }
 
       selected.clearTint();
-      dragSelected = false;
 
       if (dragSelected && gameObject._data.draggable) {
         this.assignFromXY(selected);
+        dragSelected = false;
         selected = null;
         return;
       }
@@ -230,11 +235,13 @@ class Main extends Phaser.Scene {
       // Clicked on yourself
       if (selected === gameObject) {
         selected = null;
+        dragSelected = false;
         return;
       }
       // Clicked on a new peep
       selected = gameObject;
-      gameObject.setTint(0xff0000);
+      dragSelected = false;
+      gameObject.setTint(0x00ff00);
       this.displayInfo(gameObject);
     });
 
@@ -334,7 +341,8 @@ class Main extends Phaser.Scene {
     t.add({
       targets: peep,
       x: peep.downX,
-      y: peep.downY
+      y: peep.downY,
+      duration: 200
     });
     t.play();
   }
@@ -433,6 +441,8 @@ class Main extends Phaser.Scene {
       x: 20 + (gs.length - 1) * 10,
       duration: 500
     });
+
+    peep._timeline = timeline;
 
     timeline.play();
   }
