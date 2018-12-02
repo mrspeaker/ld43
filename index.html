@@ -7,6 +7,15 @@
       body {
         background-color: #0c0c0c;
         text-align: center;
+        font-family: helvetica, sans-serif;
+        font-size: 9pt;
+        color: #444;
+      }
+      #board {
+        margin: 20px;
+      }
+      a {
+        color: #555;
       }
       #board canvas {
         cursor: none;
@@ -14,7 +23,13 @@
     </style>
   </head>
   <body>
-    <div id="board"></div>
+    <div id="container">
+      <div id="board"></div>
+      <div id="cred">
+        <span>A sort of game by <a href="https://github.com/mrspeaker/ld43">Mr Speaker</a></span>
+      </div>
+    </div>
+
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>

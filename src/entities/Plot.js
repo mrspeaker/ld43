@@ -1,4 +1,5 @@
 import Events from "../Events.js";
+import data from "../data.js";
 
 const SPRITE = 15;
 
@@ -19,6 +20,8 @@ class Plot {
     this.farmers = [];
     this.tilling = false;
 
+    this.farmingTime = data.FARMING_BASE_TIME;
+
     this.name = "PL_" + btoa(Math.random() * 1000)
       .substr((Math.random() * 4) | 0, 6)
       .toUpperCase();
@@ -28,6 +31,9 @@ class Plot {
     if (!tilling || farmers.length == 0) {
       return;
     }
+
+    // const farmingSkill = griller._data.culinary * data.GRILLING_SKILL_MULTIPIER;
+    // this.grillTime -= (1 + grillerSkill);
 
     this.progress = Math.min(100, this.progress + farmers.length * 5);
     this._sprite.setFrame((((this.progress/100) * 5) | 0) + SPRITE);
@@ -40,6 +46,7 @@ class Plot {
       Events.emit("plotHarvested", this);
       this.tilling = false;
       this.progress = 0;
+      this.farmingTime = data.FARMING_BASE_TIME;
       this.farmers = [];
     }
   }

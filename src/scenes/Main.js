@@ -76,6 +76,8 @@ class Main extends Phaser.Scene {
     this.load.audio("grinded", "res/audio/crunch.mp3");
     this.load.audio("pop", "res/audio/pop.mp3");
     this.load.audio("nope", "res/audio/nope.mp3");
+    this.load.audio("ding", "res/audio/ding.mp3");
+    this.load.audio("theme", "res/audio/theme.mp3");
   }
 
   create() {
@@ -87,8 +89,17 @@ class Main extends Phaser.Scene {
       mouse: this.sound.add("mouse"),
       grinded: this.sound.add("grinded"),
       pop: this.sound.add("pop"),
-      nope: this.sound.add("nope")
+      nope: this.sound.add("nope"),
+      ding: this.sound.add("ding"),
+      theme: this.sound.add("theme", {
+        loop: true,
+        volume: 0.7
+      })
     };
+
+    setTimeout(() => {
+      this.audio.theme.play();
+    }, 10000);
 
     this.add.image(120, 160, "bg");
 
@@ -253,6 +264,7 @@ class Main extends Phaser.Scene {
     this.hoverHelper = this.add.graphics();
 
     this.handlePointer(mouse);
+    this.cameras.main.fadeIn(6000);
   }
 
   update(time, dt) {
@@ -606,7 +618,7 @@ class Main extends Phaser.Scene {
     timeline.add({
       targets: peepSprite,
       x: (xo -= 85),
-      duration: 2000,
+      duration: 2000
     });
 
     timeline.add({
@@ -638,7 +650,7 @@ class Main extends Phaser.Scene {
         duration: 500,
         onComplete: () => {
           peepSprite.anims.play(`${specialty}_idle`);
-          peepSprite.setScale(Math.random() <0.5 ? -1 : 1, 1);
+          peepSprite.setScale(Math.random() < 0.5 ? -1 : 1, 1);
         }
       });
     } else {
@@ -650,7 +662,7 @@ class Main extends Phaser.Scene {
         duration: 500,
         onComplete: () => {
           peepSprite.anims.play(`${specialty}_idle`);
-          peepSprite.setScale(Math.random() <0.5 ? -1 : 1, 1);
+          peepSprite.setScale(Math.random() < 0.5 ? -1 : 1, 1);
         }
       });
     }
@@ -823,6 +835,8 @@ class Main extends Phaser.Scene {
       );
       this.add.existing(sprite);
       burger._sprite = sprite;
+
+      this.audio.ding.play();
 
       const t = this.tweens.createTimeline();
       t.add({
