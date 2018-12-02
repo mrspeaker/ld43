@@ -6,7 +6,7 @@ class GrillStation {
     this.griller = null;
     this.meat = null;
     this.grilling = false;
-    this.grillTime = 20;
+    this.grillTime = 5;
   }
   tick() {
     const { grilling, griller, meat } = this;
@@ -17,7 +17,7 @@ class GrillStation {
     this.grillTime -= 1;
     if (this.grillTime <= 0) {
       this.grilling = false;
-      this.grillTime = 20;
+      this.grillTime = 5;
       this.meat = false;
       Events.emit("grillComplete", { goodness: 1 });
     }

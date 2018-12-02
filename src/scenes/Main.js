@@ -1,6 +1,7 @@
 import { PeepSprite } from "../entities/Peep.js";
 import { CropSprite } from "../entities/Crop.js";
 import { CookedMeatSprite } from "../entities/CookedMeat.js";
+import { BurgerSprite } from "../entities/Burger.js";
 import { PattySprite } from "../entities/Patty.js";
 import Car from "../entities/Car.js";
 import PeepTypes from "../entities/PeepTypes.js";
@@ -15,14 +16,16 @@ const isIn = (go, minX, minY, maxX, maxY) => {
 };
 
 const Areas = {
-  Incubator: [119, 88, 233, 136],
+  Incubator: [120, 88, 190, 136],
   Queue: [3, 81, 110, 141],
   Farm: [1, 144, 113, 220],
   Kitchen: [140, 147, 229, 237],
   Grinder: [148, 141, 223, 275],
-  CropSpawn: [118, 154],
+  LoveShack: [196, 62, 236, 123],
+  CropSpawn: [118, 144],
   PattySpawn: [210, 290],
-  CookedSpawn: [140, 155]
+  CookedSpawn: [136, 144],
+  BurgerSpawn: [127, 240],
 };
 
 class Main extends Phaser.Scene {
@@ -37,11 +40,12 @@ class Main extends Phaser.Scene {
         crop
       );
       this.add.existing(sprite);
+      crop._sprite = sprite;
 
       const t = this.tweens.createTimeline();
       t.add({
         targets: sprite,
-        y: Areas.CropSpawn[1] + 116 - this.game.crops.length * 16,
+        y: Areas.CropSpawn[1] + 96 - this.game.produce.length * 16,
         duration: 5000
       });
       t.play();
@@ -59,16 +63,9 @@ class Main extends Phaser.Scene {
       const t = this.tweens.createTimeline();
       t.add({
         targets: sprite,
-        y: Areas.CookedSpawn[1] + 138 - (this.game.cooked_meat.length - 1) * 16,
+        y: Areas.CookedSpawn[1] + 96 - this.game.cooked_meat.length * 16,
         duration: 5000
       });
-      if (this.game.cooked_meat.length <= 1) {
-        t.add({
-          targets: sprite,
-          x: Areas.CookedSpawn[0] - 20,
-          duration: 500
-        });
-      }
       t.play();
     });
 
@@ -116,6 +113,35 @@ class Main extends Phaser.Scene {
       this.assignPeep(parent1, PeepTypes.UNASSIGNED);
       this.assignPeep(parent2, PeepTypes.UNASSIGNED);
     });
+
+    Events.on("newBurger", burger => {
+      const sprite = new BurgerSprite(
+        this,
+        Areas.BurgerSpawn[0],
+        Areas.BurgerSpawn[1],
+        burger
+      );
+      this.add.existing(sprite);
+      burger._sprite = sprite;
+
+      const t = this.tweens.createTimeline();
+      t.add({
+        targets: sprite,
+        y: Areas.BurgerSpawn[1] + 39,
+        duration: 3000
+      });
+      t.add({
+        targets: sprite,
+        x: Areas.BurgerSpawn[0] - 22,
+        duration: 1000,
+        onComplete: () => {
+          sprite.x = 85;
+          sprite.y = 300;
+          Events.emit("orderFilled", burger);
+        }
+      });
+      t.play();
+    });
   }
   preload() {
     this.load.image("bg", "res/sgb.png");
@@ -161,20 +187,23 @@ class Main extends Phaser.Scene {
 
     // Make some belts
     for (let i = 0; i < 8; i++) {
-      if (i < 7) {
+      if (i < 6) {
         const b1 = this.add.sprite(120, 160 + i * 16 - 8, "chars");
         b1.anims.play("belt_down");
+        const b2 = this.add.sprite(120 + 16, 160 + i * 16 - 8, "chars");
+        b2.anims.play("belt_down", false, 1);
       }
-      const b2 = this.add.sprite(120 + 16, 160 + i * 16 - 8, "chars");
-      b2.anims.play("belt_down", false, 1);
       const b3 = this.add.sprite(216 + 16, 160 + i * 16 - 8, "chars");
       b3.setScale(1, -1);
       b3.anims.play("belt_down");
     }
     for (let i = 0; i < 2; i++) {
-      const s1 = this.add.sprite(120 + i * 16, 279, "chars");
+      const s1 = this.add.sprite(110 + i * 16, 279, "chars");
       s1.setRotation(Math.PI / 2);
       s1.anims.play("belt_down");
+
+      const b1 = this.add.sprite(128, 257 + i * 16 - 8, "chars");
+      b1.anims.play("belt_down");
     }
     const font_config = {
       image: "font",
@@ -244,8 +273,8 @@ class Main extends Phaser.Scene {
       mouse.y = pointer.y;
     });
 
-    this.input.on("gameobjectout", function(pointer, gameObject) {
-      //gameObject.clearTint();
+    this.input.on("pointerdown", pointer => {
+      //console.log(pointer.x, pointer.y);
     });
 
     this.input.on("gameobjectdown", (pointer, gameObject) => {
@@ -312,6 +341,16 @@ class Main extends Phaser.Scene {
       ease: "Cubic"
     });
     t.play();
+    Events.on("orderFilled", (burger) => {
+      const t = this.tweens.createTimeline();
+      t.add({
+        targets: [car, burger._sprite],
+        x: 320,
+        duration: 4000,
+        ease: "CubicOut"
+      });
+      t.play();
+    });
 
   }
 
@@ -348,6 +387,10 @@ class Main extends Phaser.Scene {
     if (isIn(peep, ...Areas.Grinder)) {
       return PeepTypes.MEAT;
     }
+    if (isIn(peep, ...Areas.LoveShack)) {
+      return PeepTypes.MATE;
+    }
+
     return PeepTypes.OFF_THE_GRID;
   }
 
@@ -392,10 +435,9 @@ class Main extends Phaser.Scene {
       this.game.addBeefling(peep._data);
     }
     if (type == PeepTypes.MATE) {
-      console.log("MATES");
+      this.game.addLoveShacker(peep);
     }
     if (type == PeepTypes.GRILLER) {
-      console.log("yeah?");
       this.game.addGriller(peep);
     }
   }

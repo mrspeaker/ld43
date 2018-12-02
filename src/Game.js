@@ -8,6 +8,7 @@ import Patty from "./entities/Patty.js";
 import Grinder from "./entities/Grinder.js";
 import Grill from "./entities/Grill.js";
 import CookedMeat from "./entities/CookedMeat.js";
+import Burger from "./entities/Burger.js";
 
 class Game {
   constructor() {
@@ -16,12 +17,16 @@ class Game {
     this.lastTick = 0;
 
     this.farm = new Farm();
-    this.crops = [];
     this.grinder = new Grinder();
     this.grill = new Grill();
+
+    this.produce = [];
     this.cooked_meat = [];
+    this.burgers = [];
 
     this.mood = new Mood();
+
+    this.loveShack = [];
 
     Events.on("plotHarvested", this.onPlotHarvested.bind(this));
     Events.on("groundPeep", this.onGroundPeep.bind(this));
@@ -34,7 +39,7 @@ class Game {
       f.peepType = PeepTypes.NOOB;
     });
     const crop = new Crop();
-    this.crops.push(crop);
+    this.produce.push(crop);
     Events.emit("newCrop", crop);
   }
 
@@ -50,6 +55,15 @@ class Game {
     const baby = new Peep();
     this.peeps.push(baby);
     Events.emit("newPeep", baby, peep1, peep2);
+  }
+
+  addLoveShacker(peep) {
+    this.loveShack.push(peep);
+    if (this.loveShack.length >= 2) {
+      const baby = new Peep();
+      this.peeps.push(baby);
+      Events.emit("newPeep", baby, this.loveShack[0], this.loveShack[1]);
+    }
   }
 
   onGrillComplete(meat_stats) {
@@ -81,6 +95,19 @@ class Game {
     this.farm.tick();
     this.grinder.tick();
     this.grill.tick();
+
+    if (this.produce.length && this.cooked_meat.length) {
+      // Remove from lists,
+      const produce = this.produce.shift();
+      const meat = this.cooked_meat.shift();
+      produce._sprite.destroy();
+      meat._sprite.destroy();
+
+      const burger = new Burger(produce, meat);
+      Events.emit("newBurger", burger);
+      // REmove sprites
+      // Add new burger.
+    }
   }
 }
 

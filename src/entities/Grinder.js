@@ -8,7 +8,7 @@ class Grinder {
   tick() {
     this.beeflings = this.beeflings.filter(b => {
       const time = b.time += 1;
-      if (time > 20) {
+      if (time > 5) {
         Events.emit("groundPeep", b.peep);
         return false;
       }
