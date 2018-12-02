@@ -19,14 +19,17 @@ class Peep {
       .substr((Math.random() * 4) | 0, 6)
       .toUpperCase();
     this.type = "PEEP";
+    this.draggable = true;
     this.peepType = PeepTypes.NOOB;
     this.working = true; // Born working, yo.
+
     this.hp = 0;
+    this.age = 0;
+
     this.botany = 0;
     this.culinary = 0;
-    this.age = 0;
-    this.flavor = 0;
-    this.draggable = true;
+    this.tenderness = 0;
+    this.virility = 0;
   }
 }
 

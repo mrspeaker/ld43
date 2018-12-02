@@ -1,4 +1,5 @@
 import Events from "../Events.js";
+import data from "../data.js";
 
 class GrillStation {
   constructor() {
@@ -6,17 +7,19 @@ class GrillStation {
     this.griller = null;
     this.meat = null;
     this.grilling = false;
-    this.grillTime = 5;
+    this.grillTime = data.GRILLING_BASE_TIME;
   }
   tick() {
     const { grilling, griller, meat } = this;
     if (!grilling || !griller || !meat) {
       return;
     }
-    this.grillTime -= 1;
+
+    const grillerSkill = griller._data.culinary * data.GRILLING_SKILL_MULTIPIER;
+    this.grillTime -= (1 + grillerSkill);
     if (this.grillTime <= 0) {
       this.grilling = false;
-      this.grillTime = 5;
+      this.grillTime = data.GRILLING_BASE_TIME;
       this.meat = false;
       this.griller.anims.play("grill_idle");
       this.griller._data.working = false;

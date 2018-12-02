@@ -39,6 +39,13 @@ const HoverableAreas = [
   ([x1, y1, x2, y2]) => new Phaser.Geom.Rectangle(x1, y1, x2 - x1, y2 - y1)
 );
 
+const PeepStats = {
+  CULINARY: 0,
+  BOTANY: 1,
+  TENDERNESS: 2,
+  VIRILITY: 3
+};
+
 class Main extends Phaser.Scene {
   constructor() {
     super({ key: "Main" });
@@ -181,12 +188,36 @@ class Main extends Phaser.Scene {
       Phaser.GameObjects.RetroFont.Parse(this, font_config)
     );
 
-    const title = this.add.bitmapText(0, 20, "font", "LD41");
+    const title = this.add.bitmapText(0, 10, "font", "LD41");
     dialog.add(title);
     title.setTint(0xff00ff);
 
-    this.add.bitmapText(0, 10, "font", "STEAKHOLDERS ARE");
-    const mood = this.add.bitmapText(100, 10, "font", this.game.mood.mood());
+    const ps = this.add.container();
+
+    ps.add(this.add.bitmapText(0, 30, "font", "CULINARY: "));
+    ps.add(this.add.bitmapText(0, 40, "font", "BOTANY: "));
+    ps.add(this.add.bitmapText(0, 50, "font", "TENDERNESS: "));
+    ps.add(this.add.bitmapText(0, 60, "font", "VIRILITY: "));
+    ps.visible = false;
+    const pstats = [
+      this.add.bitmapText(70, 30, "font", "0"),
+      this.add.bitmapText(70, 40, "font", "0"),
+      this.add.bitmapText(70, 50, "font", "0"),
+      this.add.bitmapText(70, 60, "font", "0")
+    ];
+    pstats.map(p => {
+      ps.add(p);
+      p.setTint(0xff00ff);
+      return p;
+    });
+
+    this.stats = {
+      peepDisplay: ps,
+      peep: pstats
+    };
+
+    this.add.bitmapText(140, 10, "font", "STEAKHOLDERS ARE");
+    const mood = this.add.bitmapText(160, 20, "font", this.game.mood.mood());
     mood.setTint(0xff00ff);
 
     //dialog.visible = false;
@@ -197,7 +228,7 @@ class Main extends Phaser.Scene {
     setInterval(() => {
       this.game.mood.rnd();
       mood.text = this.game.mood.mood();
-    }, 1000);
+    }, 5000);
 
     this.add.bitmapText(0, 84, "font", "JOB SEEKERS");
     this.add.bitmapText(176, 126, "font", "LOVE SHACK");
@@ -266,7 +297,42 @@ class Main extends Phaser.Scene {
       //console.log(pointer.x, pointer.y);
     });
 
+    // this.input.on("gameobjectout", (pointer, gameObject) => {
+    //   if (selected) {
+    //     selected.clearTint();
+    //     this.clearInfo();
+    //     selected = null;
+    //   }
+    // });
+
+    this.input.on("gameobjectover", (pointer, gameObject) => {
+      // Nothing selected
+      if (dragSelected) {
+        return;
+      }
+
+      if (selected && selected !== gameObject) {
+        selected.clearTint();
+        this.clearInfo();
+        selected = null;
+      }
+      if (!selected) {
+        selected = gameObject;
+        //this.audio.mouse.play();
+
+        dragSelected = false;
+        gameObject.setTint(0x00ff00);
+        this.displayInfo(gameObject);
+        return;
+      }
+    });
+
     this.input.on("gameobjectdown", (pointer, gameObject) => {
+      if (!dragSelected) {
+        gameObject.downX = pointer.downX;
+        gameObject.downY = pointer.downY;
+      }
+      
       // Nothing selected
       if (!selected) {
         selected = gameObject;
@@ -314,6 +380,7 @@ class Main extends Phaser.Scene {
         this.assignFromXY(selected);
         dragSelected = false;
         selected = null;
+        this.clearInfo();
         return;
       }
 
@@ -341,6 +408,7 @@ class Main extends Phaser.Scene {
   }
 
   addGraphAndCharts() {
+    return;
     const line1 = this.add.graphics();
     const line2 = this.add.graphics();
     line1.lineStyle(1, 0x00ff00, 1);
@@ -474,9 +542,25 @@ class Main extends Phaser.Scene {
   displayInfo(ent) {
     const { dialog } = this;
     const txt = dialog.first;
+    this.clearInfo();
+
     txt.text =
       ent._data.name + " - " + ent._data.type + " " + ent._data.peepType;
-    dialog.visible = true;
+    //dialog.visible = true;
+    if (ent._data.type === "PEEP") {
+      this.stats.peepDisplay.visible = true;
+      this.stats.peep[PeepStats.CULINARY].text = ent._data.culinary;
+      this.stats.peep[PeepStats.BOTANY].text = ent._data.botany;
+      this.stats.peep[PeepStats.TENDERNESS].text = ent._data.tenderness;
+      this.stats.peep[PeepStats.VIRILITY].text = ent._data.virility;
+    }
+  }
+
+  clearInfo() {
+    const { dialog } = this;
+    const txt = dialog.first;
+    txt.text = "";
+    this.stats.peepDisplay.visible = false;
   }
 
   waitForAJob(peepSprite) {
@@ -523,15 +607,31 @@ class Main extends Phaser.Scene {
       duration: 500
     });
 
-    timeline.add({
-      targets: peepSprite,
-      x: 20 + (gs.length - 1) * 10,
-      duration: 500,
-      onComplete: () => {
-        // TODO: Figure out if specialty..
-        peepSprite.anims.play("idle");
-      }
-    });
+    // HACK: scatter instead of queue!
+    if (this.time.now < 30000) {
+      // normal queing
+      timeline.add({
+        targets: peepSprite,
+        x: 20 + (gs.length - 1) * 10,
+        duration: 500,
+        onComplete: () => {
+          // TODO: Figure out if specialty..
+          peepSprite.anims.play("idle");
+        }
+      });
+    } else {
+      // scatter
+      timeline.add({
+        targets: peepSprite,
+        x: Phaser.Math.Between(Areas.Queue[0], Areas.Queue[2]),
+        y: Phaser.Math.Between(Areas.Queue[1], Areas.Queue[3]),
+        duration: 500,
+        onComplete: () => {
+          // TODO: Figure out if specialty..
+          peepSprite.anims.play("idle");
+        }
+      });
+    }
 
     peepSprite._timeline = timeline;
 

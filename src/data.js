@@ -1,0 +1,4 @@
+export default {
+  GRILLING_BASE_TIME: 15,
+  GRILLING_SKILL_MULTIPIER: 2,
+};

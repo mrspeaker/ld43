@@ -13,7 +13,7 @@ import Car from "./entities/Car.js";
 
 class Game {
   constructor() {
-    this.peeps = [...Array(10)].map(() => new Peep());
+    this.peeps = this.initPeeps();
     this.time = 0;
     this.lastTick = 0;
 
@@ -36,12 +36,21 @@ class Game {
 
     Events.on("plotHarvested", this.onPlotHarvested.bind(this));
     Events.on("groundPeep", this.onGroundPeep.bind(this));
-    Events.on("luckyCouple", this.onGetLucky.bind(this));
     Events.on("grillComplete", this.onGrillComplete.bind(this));
     Events.on("orderFilled", this.onOrderFilled.bind(this));
     Events.on("carAtWindow", this.onCarAtWindow.bind(this));
     Events.on("cookedMeatHasArrived", this.onMeatHasArrived.bind(this));
     Events.on("produceHasArrived", this.onProduceHasArrived.bind(this));
+  }
+
+  initPeeps() {
+    return [...Array(10)].map(() => new Peep()).map(p => {
+      p.culinary = Math.random() * 4 | 0;
+      p.botany = Math.random() * 4 | 0;
+      p.tenderness = Math.random() * 4 | 0;
+      p.virility = Math.random() * 4 | 0;
+      return p;
+    });
   }
 
   onPlotHarvested(plot) {
@@ -61,11 +70,11 @@ class Game {
     Events.emit("newPattie", peep, patty);
   }
 
-  onGetLucky(peep1, peep2) {
-    const baby = new Peep();
-    this.peeps.push(baby);
-    Events.emit("newPeep", baby, peep1, peep2);
-  }
+  // onGetLucky(peep1, peep2) {
+  //   const baby = new Peep();
+  //   this.peeps.push(baby);
+  //   Events.emit("newPeep", baby, peep1, peep2);
+  // }
 
   addLoveShacker(peepSprite) {
     if (this.loveShackTime > 0) {
