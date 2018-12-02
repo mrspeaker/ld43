@@ -18,7 +18,6 @@ class Grill {
     if (patty) {
       // Find stations that are not grillling, and have worker.
       const station = this.grillStations.find(s => !s.grilling && s.griller);
-      console.log("found station?", station);
       if (station) {
         // Grill.
         station.addMeat(patty);

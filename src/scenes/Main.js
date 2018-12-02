@@ -3,11 +3,10 @@ import { CropSprite } from "../entities/Crop.js";
 import { CookedMeatSprite } from "../entities/CookedMeat.js";
 import { BurgerSprite } from "../entities/Burger.js";
 import { PattySprite } from "../entities/Patty.js";
-import Car from "../entities/Car.js";
+import { CarSprite } from "../entities/Car.js";
 import PeepTypes from "../entities/PeepTypes.js";
 import Game from "../Game.js";
 import Events from "../Events.js";
-
 
 const Phaser = window.Phaser;
 
@@ -26,6 +25,7 @@ const Areas = {
   PattySpawn: [210, 290],
   CookedSpawn: [136, 144],
   BurgerSpawn: [127, 240],
+  CarSpawn: [-100, 300],
 };
 
 class Main extends Phaser.Scene {
@@ -114,6 +114,42 @@ class Main extends Phaser.Scene {
       this.assignPeep(parent2, PeepTypes.UNASSIGNED);
     });
 
+    Events.on("newCar", (car) => {
+      const sprite = new CarSprite(
+        this,
+        Areas.CarSpawn[0],
+        Areas.CarSpawn[1],
+        car
+      );
+      this.add.existing(sprite);
+      car._sprite = sprite;
+
+      const t = this.tweens.createTimeline();
+      t.add({
+        targets: sprite,
+        x: 50,
+        duration: 3000,
+        ease: "Cubic"
+      });
+      t.play();
+
+      car.onOrderFilled = (burger) => {
+        const t = this.tweens.createTimeline();
+        t.add({
+          targets: [sprite, burger._sprite],
+          x: 320,
+          duration: 4000,
+          ease: "CubicOut",
+          onComplete: () => {
+            car._sprite.destroy();
+            burger._sprite.destroy();
+          }
+        });
+        t.play();
+      };
+    });
+
+
     Events.on("newBurger", burger => {
       const sprite = new BurgerSprite(
         this,
@@ -148,6 +184,7 @@ class Main extends Phaser.Scene {
     this.load.image("bgfg", "res/sgbgb.png");
     this.load.image("car", "res/car.png");
     this.load.image("char", "res/char1.png");
+    this.load.image("roof", "res/roof.png");
     this.load.spritesheet("peeps", "res/peeps.png", {
       frameWidth: 8,
       frameHeight: 12
@@ -264,7 +301,11 @@ class Main extends Phaser.Scene {
       return this.createAPeepSprite(this.game.peeps[i]);
     });
 
-    this.add.image(176, 56, "bgfg");
+    const fg = this.add.container();
+    fg.add(this.add.image(176, 56, "bgfg"));
+    fg.add(this.add.image(123, 240, "roof"));
+    fg.depth = 500;
+
     let selected = null;
     let dragSelected = false;
 
@@ -289,6 +330,12 @@ class Main extends Phaser.Scene {
         gameObject.downY = pointer.downY;
         return;
       }
+      // Error reverting if switch to different peep...
+      if (selected !== gameObject) {
+        gameObject.downX = pointer.downX;
+        gameObject.downY = pointer.downY;
+      }
+
       // Double clicked self - draggin'
       if (
         !dragSelected &&
@@ -300,18 +347,11 @@ class Main extends Phaser.Scene {
       }
 
       selected.clearTint();
-      const mate = this.droppedOnAMate(selected);
-      if (dragSelected && mate) {
-        this.assignPeep(selected, PeepTypes.MATE);
-        this.assignPeep(mate, PeepTypes.MATE);
-        Events.emit("luckyCouple", selected, mate);
 
+      if (dragSelected && gameObject._data.draggable) {
+        this.assignFromXY(selected);
         selected = null;
         return;
-      } else {
-        if (gameObject._data.draggable) {
-          this.assignFromXY(selected);
-        }
       }
 
       // Clicked on yourself
@@ -325,33 +365,13 @@ class Main extends Phaser.Scene {
       gameObject.setTint(0xff0000);
       this.displayInfo(gameObject);
     });
+
     this.input.on("pointermove", p => {
       if (selected && dragSelected) {
         selected.x = p.x;
         selected.y = p.y;
       }
     });
-
-    const car = this.add.sprite(-100, 300, "car");
-    const t = this.tweens.createTimeline();
-    t.add({
-      targets: car,
-      x: 50,
-      duration: 3000,
-      ease: "Cubic"
-    });
-    t.play();
-    Events.on("orderFilled", (burger) => {
-      const t = this.tweens.createTimeline();
-      t.add({
-        targets: [car, burger._sprite],
-        x: 320,
-        duration: 4000,
-        ease: "CubicOut"
-      });
-      t.play();
-    });
-
   }
 
   createAPeepSprite(peepData) {
@@ -396,10 +416,7 @@ class Main extends Phaser.Scene {
 
   assignFromXY(peep) {
     const area = this.getAreaFromXY(peep);
-    if (area == PeepTypes.NOOB) {
-      this.revertDrag(peep);
-    }
-    if (area == PeepTypes.OFF_THE_GRID) {
+    if (area == PeepTypes.NOOB || area == PeepTypes.OFF_THE_GRID) {
       this.revertDrag(peep);
     } else {
       if (area !== peep._data.peepType) {

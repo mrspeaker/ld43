@@ -13,7 +13,6 @@ class GrillStation {
     if (!grilling || !griller || !meat) {
       return;
     }
-    console.log("grilling!");
     this.grillTime -= 1;
     if (this.grillTime <= 0) {
       this.grilling = false;

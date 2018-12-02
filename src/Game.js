@@ -9,6 +9,7 @@ import Grinder from "./entities/Grinder.js";
 import Grill from "./entities/Grill.js";
 import CookedMeat from "./entities/CookedMeat.js";
 import Burger from "./entities/Burger.js";
+import Car from "./entities/Car.js";
 
 class Game {
   constructor() {
@@ -25,6 +26,8 @@ class Game {
     this.burgers = [];
 
     this.mood = new Mood();
+    this.cars = [];
+    this.nextCar = 8000;
 
     this.loveShack = [];
 
@@ -32,6 +35,7 @@ class Game {
     Events.on("groundPeep", this.onGroundPeep.bind(this));
     Events.on("luckyCouple", this.onGetLucky.bind(this));
     Events.on("grillComplete", this.onGrillComplete.bind(this));
+    Events.on("orderFilled", this.onOrderFilled.bind(this));
   }
 
   onPlotHarvested(plot) {
@@ -72,6 +76,13 @@ class Game {
     Events.emit("newCookedMeat", meat);
   }
 
+  onOrderFilled(burger) {
+    // Get rid of the car.
+    this.nextCar = Math.random() * 12000;
+    const car = this.cars.shift();
+    car.onOrderFilled && car.onOrderFilled(burger);
+  }
+
   addFarmer(peep) {
     this.farm.addFarmer(peep);
   }
@@ -84,11 +95,20 @@ class Game {
     this.grill.addGriller(peep);
   }
 
+  sendACar() {
+    const car = new Car();
+    this.cars.push(car);
+    Events.emit("newCar", car);
+  }
+
   update(time, dt) {
     this.time += dt;
     if (this.time - this.lastTick > 300) {
       this.lastTick = this.time;
       this.tick();
+    }
+    if ((this.nextCar -= dt) < 0 && this.cars.length == 0) {
+      this.sendACar();
     }
   }
   tick () {
