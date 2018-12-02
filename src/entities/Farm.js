@@ -4,9 +4,14 @@ import Events from "../Events.js";
 class Farm {
   constructor() {
     this.NUM_PLOTS = 6;
-    this.plots = [...Array(this.NUM_PLOTS)].map(() => {
+    this.plots = [];
+  }
+
+  createPlots() {
+    [...Array(this.NUM_PLOTS)].forEach((_, i) => {
       const p = new Plot();
-      return p;
+      Events.emit("newPlot", p, (i % 3) * 32 + 16, (i / 3|0) * 32 + 160);
+      this.plots.push(p);
     });
   }
 

@@ -36,6 +36,7 @@ class Game {
     Events.on("luckyCouple", this.onGetLucky.bind(this));
     Events.on("grillComplete", this.onGrillComplete.bind(this));
     Events.on("orderFilled", this.onOrderFilled.bind(this));
+    Events.on("carAtWindow", this.onCarAtWindow.bind(this));
   }
 
   onPlotHarvested(plot) {
@@ -77,10 +78,24 @@ class Game {
   }
 
   onOrderFilled(burger) {
+    if (!this.cars.length) {
+      console.log("no car for burgerz");
+      this.burgers.push(burger);
+      return;
+    }
     // Get rid of the car.
     this.nextCar = Math.random() * 12000;
     const car = this.cars.shift();
     car.onOrderFilled && car.onOrderFilled(burger);
+  }
+
+  onCarAtWindow() {
+    if (this.burgers.length) {
+      // Got one wiaint!
+      console.log("got one waiting!)");
+      const burger = this.burgers.shift();
+      this.onOrderFilled(burger);
+    }
   }
 
   addFarmer(peep) {
