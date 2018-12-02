@@ -4,6 +4,8 @@ import Peep from "./entities/Peep.js";
 import PeepTypes from "./entities/PeepTypes.js";
 import Farm from "./entities/Farm.js";
 import Crop from "./entities/Crop.js";
+import Patty from "./entities/Patty.js";
+import Grinder from "./entities/Grinder.js";
 
 class Game {
   constructor() {
@@ -23,12 +25,13 @@ class Game {
     this.mana = 0;
     this.customers = [];
 
-
     this.farm = new Farm();
-
+    this.grinder = new Grinder();
     this.mood = new Mood();
 
     Events.on("plotHarvested", this.onPlotHarvested.bind(this));
+    Events.on("groundPeep", this.onGroundPeep.bind(this));
+    Events.on("luckyCouple", this.onGetLucky.bind(this));
   }
 
   onPlotHarvested(plot) {
@@ -40,8 +43,26 @@ class Game {
     Events.emit("newCrop", crop);
   }
 
+  onGroundPeep(peep) {
+    this.peeps = this.peeps.filter(p => p !== peep);
+    console.log("there goes a good pattie.");
+    const patty = new Patty();
+    this.patties.push(patty);
+    Events.emit("newPattie", peep, patty);
+  }
+
+  onGetLucky(peep1, peep2) {
+    const baby = new Peep();
+    this.peeps.push(baby);
+    Events.emit("newPeep", baby, peep1, peep2);
+  }
+
   addFarmer(peep) {
     this.farm.addFarmer(peep);
+  }
+
+  addBeefling(peep) {
+    this.grinder.addBeefling(peep);
   }
 
   update(time, dt) {
@@ -53,6 +74,7 @@ class Game {
   }
   tick () {
     this.farm.tick();
+    this.grinder.tick();
   }
 }
 

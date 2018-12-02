@@ -1,11 +1,14 @@
 import PeepTypes from "./PeepTypes.js";
 
+const Phaser = window.Phaser;
+
 export class PeepSprite extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, data) {
     super(scene, x, y, "peeps");
     this.setOrigin(0.5, 1);
     this.setInteractive();
-    this.data = data;
+    // NOTE: "data" is used internally in Phaser :()
+    this._data = data;
     this.anims.play("walk");
   }
 }

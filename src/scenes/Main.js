@@ -1,5 +1,6 @@
 import { PeepSprite } from "../entities/Peep.js";
 import { CropSprite } from "../entities/Crop.js";
+import { PattySprite } from "../entities/Patty.js";
 import PeepTypes from "../entities/PeepTypes.js";
 import Game from "../Game.js";
 import Events from "../Events.js";
@@ -16,7 +17,8 @@ const Areas = {
   Farm: [1, 144, 113, 220],
   Kitchen: [140, 147, 229, 237],
   Grinder: [148, 141, 223, 275],
-  CropSpawn: [118, 154, 130 + 16, 144 + 16]
+  CropSpawn: [118, 154],
+  PattySpawn: [210, 290]
 };
 
 class Main extends Phaser.Scene {
@@ -24,7 +26,6 @@ class Main extends Phaser.Scene {
     super({ key: "Main" });
 
     Events.on("newCrop", crop => {
-      console.log("new crop yo");
       const sprite = new CropSprite(
         this,
         Areas.CropSpawn[0],
@@ -39,15 +40,54 @@ class Main extends Phaser.Scene {
       // sprite.on("pointerup", () => {
       //   sprite.clearTint();
       // });
-
       const t = this.tweens.createTimeline();
       t.add({
         targets: sprite,
-        y: Areas.CropSpawn[1] + 100,
+        y: Areas.CropSpawn[1] + 116 - this.game.crops.length * 16,
         duration: 5000
       });
       t.play();
     });
+
+    Events.on("newPattie", (peep, patty) => {
+      this.peeps = this.peeps.filter(p => {
+        if (p._data === peep) {
+          p.destroy();
+
+          const sprite = new PattySprite(
+            this,
+            Areas.PattySpawn[0],
+            Areas.PattySpawn[1],
+            patty
+          );
+          this.add.existing(sprite);
+
+          const t = this.tweens.createTimeline();
+          t.add({
+            targets: sprite,
+            x: Areas.PattySpawn[0] + 20,
+            duration: 500
+          });
+          t.add({
+            targets: sprite,
+            y: Areas.PattySpawn[1] - 146 + (this.game.patties.length * 16),
+            duration: 4000
+          });
+          t.play();
+
+          return false;
+        }
+        return true;
+      });
+    });
+
+    Events.on("newPeep", (baby, parent1, parent2) => {
+      const peep = this.createAPeepSprite(baby);
+      this.peeps.push(peep);
+      this.assignPeep(parent1, PeepTypes.UNASSIGNED);
+      this.assignPeep(parent2, PeepTypes.UNASSIGNED);
+    });
+
   }
   preload() {
     this.load.image("bg", "res/sgb.png");
@@ -63,10 +103,17 @@ class Main extends Phaser.Scene {
 
     this.load.image("font", "res/font.png");
   }
+
   create() {
     this.game = new Game();
 
     this.add.image(120, 160, "bg");
+
+    const mouse = this.add.sprite(40, 40, "chars");
+    mouse.setOrigin(0, 0);
+    mouse.setFrame(10);
+    this.children.bringToTop(mouse);
+    mouse.depth = 1000;
 
     this.anims.create({
       key: "walk",
@@ -124,31 +171,22 @@ class Main extends Phaser.Scene {
       mood.text = this.game.mood.mood();
     }, 1000);
 
-    this.peeps = [...Array(10)].map((_, i) => {
-      const p = new PeepSprite(this, 0, 0, this.game.peeps[i]);
-      this.assignPeep(p, PeepTypes.NOOB);
-      this.add.existing(p);
-      //this.input.setDraggable(p);
-      return p;
-    });
-
     this.add.bitmapText(0, 84, "font", "JOB SEEKERS");
     this.add.bitmapText(176, 126, "font", "INCUBATOR");
     this.add.bitmapText(0, 146, "font", "THE FARM");
     this.add.bitmapText(156, 156, "font", "THE GRILL");
     this.add.bitmapText(152, 246, "font", "THE GRINDER");
 
+    this.peeps = [...Array(10)].map((_, i) => {
+      return this.createAPeepSprite(this.game.peeps[i]);
+    });
+
     let selected = null;
     let dragSelected = false;
-    let hovered = null;
 
-    this.input.on("gameobjectover", (pointer, gameObject) => {
-      // if (hovered) {
-      //   hovered.clearTint();
-      // }
-      // hovered = gameObject
-      // this.displayInfo(gameObject);
-      // gameObject.setTint(0xff0000);
+    this.input.on("pointermove", pointer => {
+      mouse.x = pointer.x;
+      mouse.y = pointer.y;
     });
 
     this.input.on("gameobjectout", function(pointer, gameObject) {
@@ -156,8 +194,6 @@ class Main extends Phaser.Scene {
     });
 
     this.input.on("gameobjectdown", (pointer, gameObject) => {
-      //if (gameObject.data.type !== "PEEP") return;
-
       // Nothing selected
       if (!selected) {
         selected = gameObject;
@@ -172,7 +208,7 @@ class Main extends Phaser.Scene {
       // Double clicked self - draggin'
       if (
         !dragSelected &&
-        gameObject.data.draggable &&
+        gameObject._data.draggable &&
         selected === gameObject
       ) {
         dragSelected = true;
@@ -180,14 +216,16 @@ class Main extends Phaser.Scene {
       }
 
       selected.clearTint();
-      // TODO: see if it's dropped on anybody
       const mate = this.droppedOnAMate(selected);
       if (dragSelected && mate) {
-        console.log("aww, you found woneone!", mate);
+        this.assignPeep(selected, PeepTypes.MATE);
+        this.assignPeep(mate, PeepTypes.MATE);
+        Events.emit("luckyCouple", selected, mate);
+
         selected = null;
         return;
       } else {
-        if (gameObject.data.draggable) {
+        if (gameObject._data.draggable) {
           this.assignFromXY(selected);
         }
       }
@@ -202,55 +240,26 @@ class Main extends Phaser.Scene {
       dragSelected = false;
       gameObject.setTint(0xff0000);
       this.displayInfo(gameObject);
-
-      // if (selected ) {
-      //   console.log("was!");
-      //   this.assignFromXY(selected);
-      //   selected = null;
-      // } else {
-      //   selected = gameObject;
-      // }
-    });
-    this.input.on("gameobjectup", function(pointer, gameObject) {
-      //  gameObject.clearTint();
     });
     this.input.on("pointermove", p => {
-      //console.log(p.downX, p.downY, p);
       if (selected && dragSelected) {
         selected.x = p.x;
         selected.y = p.y;
       }
     });
-    this.input.on("pointerdown", p => {
-      //console.log(p.downX, p.downY, p);
-      // if (selected) {
-      //   selected.clearTint();
-      //   selected = null;
-      // }
-    });
-    // this.input.on("dragstart", (pointer, ent) => {
-    //   ent.setTint(0xff0000);
-    //   ent.downX = pointer.downX;
-    //   ent.downY = pointer.downY;
-    //
-    //   this.displayInfo(ent);
-    // });
-    //
-    // this.input.on("drag", (pointer, ent, dragX, dragY) => {
-    //   ent.x = dragX;
-    //   ent.y = dragY;
-    // });
-    //
-    // this.input.on("dragend", (pointer, ent) => {
-    //   ent.clearTint();
-    //   this.assignFromXY(ent);
-    // });
+  }
+
+  createAPeepSprite(peepData) {
+    const p = new PeepSprite(this, 0, 0, peepData);
+    this.assignPeep(p, PeepTypes.NOOB);
+    this.add.existing(p);
+    return p;
   }
 
   update(time, dt) {
     this.game.update(time, dt);
     if (Math.random() < 0.01) {
-      const noobs = this.peeps.filter(p => p.data.peepType === PeepTypes.NOOB);
+      const noobs = this.peeps.filter(p => p._data.peepType === PeepTypes.NOOB);
       if (noobs.length) {
         this.assignPeep(noobs[0], PeepTypes.UNASSIGNED);
       }
@@ -284,7 +293,7 @@ class Main extends Phaser.Scene {
     if (area == PeepTypes.OFF_THE_GRID) {
       this.revertDrag(peep);
     } else {
-      if (area !== peep.data.peepType) {
+      if (area !== peep._data.peepType) {
         this.assignPeep(peep, area);
       }
     }
@@ -301,7 +310,7 @@ class Main extends Phaser.Scene {
   }
 
   assignPeep(peep, type) {
-    peep.data.peepType = type;
+    peep._data.peepType = type;
     if (type == PeepTypes.NOOB) {
       const [minX, minY, maxX, maxY] = Areas.Incubator;
       peep.x = Phaser.Math.Between(minX, maxX);
@@ -311,14 +320,20 @@ class Main extends Phaser.Scene {
       this.growUp(peep);
     }
     if (type == PeepTypes.FARMER) {
-      this.game.addFarmer(peep.data);
+      this.game.addFarmer(peep._data);
+    }
+    if (type == PeepTypes.MEAT) {
+      this.game.addBeefling(peep._data);
+    }
+    if (type == PeepTypes.MATE) {
+      console.log("MATES");
     }
   }
 
   displayInfo(ent) {
     const { dialog } = this;
     const txt = dialog.first;
-    txt.text = ent.data.name + " - " + ent.data.type + " " + ent.data.peepType;
+    txt.text = ent._data.name + " - " + ent._data.type + " " + ent._data.peepType;
     dialog.visible = true;
   }
 
@@ -339,7 +354,7 @@ class Main extends Phaser.Scene {
   }
 
   growUp(peep) {
-    const gs = this.peeps.filter(p => p.data.peepType === PeepTypes.UNASSIGNED);
+    const gs = this.peeps.filter(p => p._data.peepType === PeepTypes.UNASSIGNED);
 
     const timeline = this.tweens.createTimeline();
 

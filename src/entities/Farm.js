@@ -8,9 +8,6 @@ class Farm {
       const p = new Plot();
       return p;
     });
-    Events.on("plotHarvested", (pp) => {
-      console.log(pp);
-    });
   }
 
   tick() {
@@ -18,7 +15,8 @@ class Farm {
   }
 
   addFarmer(peep) {
-    this.plots[0].addFarmer(peep);
+    const plot = this.plots.sort(p => p.farmers.length)[0];
+    plot.addFarmer(peep);
   }
 }
 

@@ -1,23 +1,23 @@
-export class CropSprite extends Phaser.GameObjects.Sprite {
+export class PattySprite extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, data) {
     super(scene, x, y, "chars");
-    this.setFrame(5);
-    this.setOrigin(0.5, 0.3);
+    this.setFrame(6);
+    this.setOrigin(0.5, 0.5);
     this.setInteractive();
     this._data = data;
   }
 }
 
-class Crop {
+class Patty {
   constructor() {
-    this.name = "CR_" + btoa(Math.random() * 1000)
+    this.name = "PAT_" + btoa(Math.random() * 1000)
       .substr((Math.random() * 4) | 0, 6)
       .toUpperCase();
 
     this.age = 0;
     this.flavor = 0;
-    this.type = "CROP";
+    this.type = "PATTY";
   }
 }
 
-export default Crop;
+export default Patty;
