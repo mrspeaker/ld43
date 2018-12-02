@@ -80,6 +80,8 @@ class Main extends Phaser.Scene {
 
   create() {
     this.game = new Game();
+    this.initNoobs = this.game.peeps.length;
+    this.lastNoob = 0;
 
     this.audio = {
       mouse: this.sound.add("mouse"),
@@ -101,14 +103,14 @@ class Main extends Phaser.Scene {
     this.game.farm.createPlots();
 
     this.anims.create({
-      key: "idle",
+      key: "peep_idle",
       frames: this.anims.generateFrameNumbers("peeps", { start: 0, end: 0 }),
       frameRate: 10,
       repeat: -1
     });
 
     this.anims.create({
-      key: "walk",
+      key: "peep_action",
       frames: this.anims.generateFrameNumbers("peeps", { start: 0, end: 1 }),
       frameRate: 10,
       repeat: -1
@@ -122,7 +124,7 @@ class Main extends Phaser.Scene {
     });
 
     this.anims.create({
-      key: "farm",
+      key: "farm_action",
       frames: this.anims.generateFrameNumbers("peeps", { start: 5, end: 6 }),
       frameRate: 5,
       repeat: -1
@@ -136,7 +138,7 @@ class Main extends Phaser.Scene {
     });
 
     this.anims.create({
-      key: "grill",
+      key: "grill_action",
       frames: this.anims.generateFrameNumbers("peeps", { start: 10, end: 11 }),
       frameRate: 5,
       repeat: -1
@@ -255,10 +257,21 @@ class Main extends Phaser.Scene {
 
   update(time, dt) {
     this.game.update(time, dt);
-    if (Math.random() < 0.01) {
-      const noobs = this.peeps.filter(p => p._data.peepType === PeepTypes.NOOB);
-      if (noobs.length) {
-        this.assignPeep(noobs[0], PeepTypes.UNASSIGNED);
+
+    if (this.initNoobs > 0) {
+      if (time - this.lastNoob > 1000) {
+        this.initNoobs--;
+        this.assignPeep(this.peeps[this.initNoobs], PeepTypes.UNASSIGNED);
+        this.lastNoob = time;
+      }
+    } else {
+      if (Math.random() < 0.01) {
+        const noobs = this.peeps.filter(
+          p => p._data.peepType === PeepTypes.NOOB
+        );
+        if (noobs.length) {
+          this.assignPeep(noobs[0], PeepTypes.UNASSIGNED);
+        }
       }
     }
   }
@@ -328,11 +341,15 @@ class Main extends Phaser.Scene {
     });
 
     this.input.on("gameobjectdown", (pointer, gameObject) => {
+      // NOTE: last minute control change: hover to select, click to dragSelect
+      // Im sure a bunch of the logic in here is redundant now!
+
       if (!dragSelected) {
+        this.audio.mouse.play();
         gameObject.downX = pointer.downX;
         gameObject.downY = pointer.downY;
       }
-      
+
       // Nothing selected
       if (!selected) {
         selected = gameObject;
@@ -359,7 +376,6 @@ class Main extends Phaser.Scene {
         selected === gameObject
       ) {
         if (gameObject._data && gameObject._data.working) {
-          console.log("sorry, no go.");
           selected.clearTint();
           selected = null;
           this.audio.nope.play();
@@ -511,7 +527,6 @@ class Main extends Phaser.Scene {
     peep._data._lastPeepType = peep._data.peepType;
 
     if (peep._data.onChangeJobs) {
-      console.log("already doing something?");
       peep._data.onChangeJobs();
       peep._data.onChangeJobs = null;
     }
@@ -564,13 +579,17 @@ class Main extends Phaser.Scene {
   }
 
   waitForAJob(peepSprite) {
-    peepSprite._data.working = false;
+    const peep = peepSprite._data;
+    peep.working = false;
     const gs = this.peeps.filter(
       p => p._data.peepType === PeepTypes.UNASSIGNED
     );
 
-    // TODO: Figure out if specialty..
-    peepSprite.anims.play("walk");
+    const cook = peep.culinary;
+    const grow = peep.botany;
+    const specialty =
+      cook > 2 || grow > 2 ? (cook > grow ? "grill" : "farm") : "peep";
+    peepSprite.anims.play(`${specialty}_action`);
 
     const timeline = this.tweens.createTimeline();
 
@@ -580,19 +599,21 @@ class Main extends Phaser.Scene {
     timeline.add({
       targets: peepSprite,
       x: xo,
-      y: yo
+      y: yo,
+      scaleX: -1
     });
 
     timeline.add({
       targets: peepSprite,
       x: (xo -= 85),
-      duration: 2000
+      duration: 2000,
     });
 
     timeline.add({
       targets: peepSprite,
       y: (yo += 15),
-      duration: 500
+      duration: 500,
+      scaleX: 1
     });
 
     timeline.add({
@@ -604,19 +625,20 @@ class Main extends Phaser.Scene {
     timeline.add({
       targets: peepSprite,
       y: (yo += 20),
-      duration: 500
+      duration: 500,
+      scaleX: -1
     });
 
     // HACK: scatter instead of queue!
-    if (this.time.now < 30000) {
+    if (this.time.now < 15000) {
       // normal queing
       timeline.add({
         targets: peepSprite,
         x: 20 + (gs.length - 1) * 10,
         duration: 500,
         onComplete: () => {
-          // TODO: Figure out if specialty..
-          peepSprite.anims.play("idle");
+          peepSprite.anims.play(`${specialty}_idle`);
+          peepSprite.setScale(Math.random() <0.5 ? -1 : 1, 1);
         }
       });
     } else {
@@ -627,8 +649,8 @@ class Main extends Phaser.Scene {
         y: Phaser.Math.Between(Areas.Queue[1], Areas.Queue[3]),
         duration: 500,
         onComplete: () => {
-          // TODO: Figure out if specialty..
-          peepSprite.anims.play("idle");
+          peepSprite.anims.play(`${specialty}_idle`);
+          peepSprite.setScale(Math.random() <0.5 ? -1 : 1, 1);
         }
       });
     }
@@ -641,6 +663,9 @@ class Main extends Phaser.Scene {
   handleCustomGameEvents() {
     Events.on("jobRejection", peep => {
       this.revertDrag(peep);
+    });
+    Events.on("workerFree", peep => {
+      this.assignPeep(peep._sprite || peep, PeepTypes.UNASSIGNED);
     });
     Events.on("loveStarts", () => {
       this.loveSprite.visible = true;

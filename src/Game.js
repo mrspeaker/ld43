@@ -55,7 +55,8 @@ class Game {
 
   onPlotHarvested(plot) {
     plot.farmers.forEach(f => {
-      f.peepType = PeepTypes.NOOB;
+      //f.peepType = PeepTypes.NOOB;
+      Events.emit("workerFree", f);
     });
     const crop = new Crop();
     this.produce_in_transit.push(crop);
@@ -78,7 +79,6 @@ class Game {
 
   addLoveShacker(peepSprite) {
     if (this.loveShackTime > 0) {
-      console.log("no room at the inn", peepSprite._data.peepType);
       Events.emit("jobRejection", peepSprite);
       return;
     }
@@ -87,7 +87,7 @@ class Game {
     peepSprite._data.onChangeJobs = () => {
       this.loveShack = this.loveShack.filter(p => p === this);
     };
-    peepSprite.anims.play("idle");
+    peepSprite.anims.play("peep_idle");
     if (this.loveShack.length >= 2) {
       Events.emit("loveStarts");
       this.loveShack.forEach(l => {
@@ -122,7 +122,6 @@ class Game {
 
   onOrderFilled(burger) {
     if (!this.cars.length) {
-      console.log("no car for burgerz");
       this.burgers.push(burger);
       return;
     }
@@ -135,7 +134,6 @@ class Game {
   onCarAtWindow() {
     if (this.burgers.length) {
       // Got one wiaint!
-      console.log("got one waiting!)");
       const burger = this.burgers.shift();
       this.onOrderFilled(burger);
     }

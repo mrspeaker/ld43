@@ -23,7 +23,7 @@ class Grill {
         station.addMeat(patty);
         station.grilling = true;
         this.removePatty(patty);
-        station.griller.anims.play("grill");
+        station.griller.anims.play("grill_action");
         station.griller._data.working = true;
       }
     }

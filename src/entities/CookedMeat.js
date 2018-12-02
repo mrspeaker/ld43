@@ -10,7 +10,7 @@ export class CookedMeatSprite extends Phaser.GameObjects.Sprite {
 
 class CookedMeat {
   constructor() {
-    this.name = "COOK_" + btoa(Math.random() * 1000)
+    this.name = "MT" + btoa(Math.random() * 1000)
       .substr((Math.random() * 4) | 0, 6)
       .toUpperCase();
 

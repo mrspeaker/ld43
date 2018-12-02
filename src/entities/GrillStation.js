@@ -24,6 +24,8 @@ class GrillStation {
       this.griller.anims.play("grill_idle");
       this.griller._data.working = false;
       Events.emit("grillComplete", { goodness: 1 });
+      Events.emit("workerFree", this.griller);
+      this.griller = null;
     }
   }
   addGriller(peep) {

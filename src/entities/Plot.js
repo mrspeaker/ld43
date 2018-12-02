@@ -33,7 +33,6 @@ class Plot {
     this._sprite.setFrame((((this.progress/100) * 5) | 0) + SPRITE);
     if (this.progress == 100) {
       this._sprite.visible = false;
-      console.log("job done", this.farmers.length);
       farmers.forEach(f => {
         f.working = false;
         f._sprite.anims.play("farm_idle");
@@ -49,7 +48,7 @@ class Plot {
       // First farmer... lets go
       this._sprite.setFrame(SPRITE);
       this._sprite.visible = true;
-      peep._sprite.anims.play("farm");
+      peep._sprite.anims.play("farm_action");
       peep.working = true;
       this.tilling = true;
     }
