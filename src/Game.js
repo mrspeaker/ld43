@@ -202,7 +202,7 @@ class Game {
       const meat = this.cooked_meat.shift();
       // Kill sprites
       produce._sprite.destroy();
-      meat._sprite.desstroy();
+      meat._sprite.destroy();
 
       // TODO: never added to burger array - is array needed?
       const burger = new Burger(produce, meat);
