@@ -4,4 +4,6 @@ export default {
 
   FARMING_BASE_TIME: 15,
   FARMING_SKILL_MULTIPLIER: 0.1,
+
+  PARENT_INFLUENCE: 2.1
 };

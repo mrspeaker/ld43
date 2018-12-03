@@ -1,7 +1,7 @@
 import Events from "./Events.js";
+import data from "./data.js";
 import Mood from "./Mood.js";
 import Peep from "./entities/Peep.js";
-import PeepTypes from "./entities/PeepTypes.js";
 import Farm from "./entities/Farm.js";
 import Crop from "./entities/Crop.js";
 import Patty from "./entities/Patty.js";
@@ -25,7 +25,7 @@ class Game {
     this.produce_in_transit = [];
     this.cooked_meat = [];
     this.cooked_meat_in_transit = [];
-    this.burgers = [];
+    this.burgers = []; // TODO: needed?
 
     this.mood = new Mood();
     this.cars = [];
@@ -44,6 +44,7 @@ class Game {
   }
 
   initPeeps() {
+    // Set initial stats
     return [...Array(10)].map(() => new Peep()).map(p => {
       p.culinary = Math.random() * 3 | 0;
       p.botany = Math.random() * 3 | 0;
@@ -70,12 +71,6 @@ class Game {
     this.peeps = this.peeps.filter(p => p !== peep);
     Events.emit("newPattie", peep, patty);
   }
-
-  // onGetLucky(peep1, peep2) {
-  //   const baby = new Peep();
-  //   this.peeps.push(baby);
-  //   Events.emit("newPeep", baby, peep1, peep2);
-  // }
 
   addLoveShacker(peepSprite) {
     if (this.loveShackTime > 0) {
@@ -169,46 +164,49 @@ class Game {
 
     if (this.loveShackTime > 0) {
       if ((this.loveShackTime -= dt) < 0) {
-        const p1 = this.loveShack[0];
-        const p2 = this.loveShack[1];
-
         const baby = new Peep();
-
-        // 5 votes for parent, 1 for the baby... but /5 to go higher
-        const pcw = (p1._data.culinary + p2._data.culinary) * 2.5;
-        baby.culinary = Math.round(((Math.random() * 4 | 0) + pcw) / 5);
-
-        const pbw = (p1._data.botany + p2._data.botany) * 2.5;
-        baby.botany = Math.round(((Math.random() * 4 | 0) + pbw) / 5);
-
-        const ptw = (p1._data.tenderness + p2._data.tenderness) * 2.5;
-        baby.tenderness = Math.round(((Math.random() * 4 | 0) + ptw) / 5);
-
-        const pvw = (p1._data.virility + p2._data.virility) * 2.5;
-        baby.virility = Math.round(((Math.random() * 4 | 0) + pvw) / 5);
-
         this.peeps.push(baby);
+        this.calcOffspringStats(baby, ...this.loveShack);
         Events.emit("newPeep", baby, ...this.loveShack);
         this.loveShack = [];
       }
     }
   }
+
+  calcOffspringStats(baby, p1, p2) {
+    // Equal votes for parent and baby - but weighted to parents
+    const parentPower = data.PARENT_INFLUENCE;
+    const pcw = (p1._data.culinary + p2._data.culinary) * parentPower;
+    const bc = Math.random() * 4 | 0;
+    baby.culinary = Math.round((bc + pcw) / 3);
+
+    const pbw = (p1._data.botany + p2._data.botany) * parentPower;
+    baby.botany = Math.round(((Math.random() * 4 | 0) + pbw) / 3);
+
+    const ptw = (p1._data.tenderness + p2._data.tenderness) * parentPower;
+    baby.tenderness = Math.round(((Math.random() * 4 | 0) + ptw) / 3);
+
+    const pvw = (p1._data.virility + p2._data.virility) * parentPower;
+    baby.virility = Math.round(((Math.random() * 4 | 0) + pvw) / 3);
+  }
+
   tick() {
     this.farm.tick();
     this.grinder.tick();
     this.grill.tick();
 
+    // Do we have the ingredients for a burger?
     if (this.produce.length && this.cooked_meat.length) {
       // Remove from lists,
       const produce = this.produce.shift();
       const meat = this.cooked_meat.shift();
+      // Kill sprites
       produce._sprite.destroy();
-      meat._sprite.destroy();
+      meat._sprite.desstroy();
 
+      // TODO: never added to burger array - is array needed?
       const burger = new Burger(produce, meat);
       Events.emit("newBurger", burger);
-      // REmove sprites
-      // Add new burger.
     }
   }
 }
