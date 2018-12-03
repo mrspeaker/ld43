@@ -45,10 +45,10 @@ class Game {
 
   initPeeps() {
     return [...Array(10)].map(() => new Peep()).map(p => {
-      p.culinary = Math.random() * 4 | 0;
-      p.botany = Math.random() * 4 | 0;
-      p.tenderness = Math.random() * 4 | 0;
-      p.virility = Math.random() * 4 | 0;
+      p.culinary = Math.random() * 3 | 0;
+      p.botany = Math.random() * 3 | 0;
+      p.tenderness = Math.random() * 3 | 0;
+      p.virility = Math.random() * 3 | 0;
       return p;
     });
   }
