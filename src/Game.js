@@ -169,7 +169,24 @@ class Game {
 
     if (this.loveShackTime > 0) {
       if ((this.loveShackTime -= dt) < 0) {
+        const p1 = this.loveShack[0];
+        const p2 = this.loveShack[1];
+
         const baby = new Peep();
+
+        // 5 votes for parent, 1 for the baby... but /5 to go higher
+        const pcw = (p1._data.culinary + p2._data.culinary) * 2.5;
+        baby.culinary = Math.round(((Math.random() * 4 | 0) + pcw) / 5);
+
+        const pbw = (p1._data.botany + p2._data.botany) * 2.5;
+        baby.botany = Math.round(((Math.random() * 4 | 0) + pbw) / 5);
+
+        const ptw = (p1._data.tenderness + p2._data.tenderness) * 2.5;
+        baby.tenderness = Math.round(((Math.random() * 4 | 0) + ptw) / 5);
+
+        const pvw = (p1._data.virility + p2._data.virility) * 2.5;
+        baby.virility = Math.round(((Math.random() * 4 | 0) + pvw) / 5);
+
         this.peeps.push(baby);
         Events.emit("newPeep", baby, ...this.loveShack);
         this.loveShack = [];
