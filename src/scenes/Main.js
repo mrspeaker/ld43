@@ -599,8 +599,13 @@ class Main extends Phaser.Scene {
 
     const cook = peep.culinary;
     const grow = peep.botany;
-    const specialty =
+    let specialty =
       cook > 2 || grow > 2 ? (cook > grow ? "grill" : "farm") : "peep";
+
+    // Don't show the skins at the start... will confuse people
+    if (this.time.now < 30000) {
+      specialty = "peep";
+    }
     peepSprite.anims.play(`${specialty}_action`);
 
     const timeline = this.tweens.createTimeline();
