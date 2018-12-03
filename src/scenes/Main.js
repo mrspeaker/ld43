@@ -201,7 +201,7 @@ class Main extends Phaser.Scene {
       Phaser.GameObjects.RetroFont.Parse(this, font_config)
     );
 
-    const title = this.add.bitmapText(0, 10, "font", "LD41");
+    const title = this.add.bitmapText(0, 10, "font", "FARM TO TABLE");
     dialog.add(title);
     title.setTint(0xff00ff);
 
@@ -238,10 +238,12 @@ class Main extends Phaser.Scene {
 
     this.addGraphAndCharts();
 
-    setInterval(() => {
+    const setMood = () => {
       this.game.mood.rnd();
       mood.text = this.game.mood.mood();
-    }, 5000);
+      setTimeout(setMood, Phaser.Math.Between(6000, 22000));
+    };
+    setTimeout(setMood, Phaser.Math.Between(15000, 35000));
 
     this.add.bitmapText(0, 84, "font", "JOB SEEKERS");
     this.add.bitmapText(176, 126, "font", "LOVE SHACK");
@@ -277,7 +279,7 @@ class Main extends Phaser.Scene {
         this.lastNoob = time;
       }
     } else {
-      if (Math.random() < 0.01) {
+      if (Math.random() < 0.005) {
         const noobs = this.peeps.filter(
           p => p._data.peepType === PeepTypes.NOOB
         );
@@ -571,9 +573,8 @@ class Main extends Phaser.Scene {
     const txt = dialog.first;
     this.clearInfo();
 
-    txt.text =
-      ent._data.name + " - " + ent._data.type + " " + ent._data.peepType;
-    //dialog.visible = true;
+    txt.text = ent._data.name + " - " + ent._data.type;
+
     if (ent._data.type === "PEEP") {
       this.stats.peepDisplay.visible = true;
       this.stats.peep[PeepStats.CULINARY].text = ent._data.culinary;
@@ -601,13 +602,12 @@ class Main extends Phaser.Scene {
     const grow = peep.botany;
     let specialty =
       cook > 2 || grow > 2 ? (cook > grow ? "grill" : "farm") : "peep";
-
+      
     // Don't show the skins at the start... will confuse people
     if (this.time.now < 30000) {
       specialty = "peep";
     }
     peepSprite.anims.play(`${specialty}_action`);
-
     const timeline = this.tweens.createTimeline();
 
     let xo = Areas.Queue[2] - 10;
