@@ -1,6 +1,5 @@
+import Phaser from "../../lib/phaser.js";
 import PeepTypes from "./PeepTypes.js";
-
-const Phaser = window.Phaser;
 
 export class PeepSprite extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, data) {

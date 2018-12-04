@@ -1,7 +1,6 @@
-import "../lib/phaser.min.js";
-import MainScene from "./scenes/Main.js";
+import Phaser from "../../lib/phaser.js";
 
-const Phaser = window.Phaser;
+import MainScene from "./scenes/Main.js";
 
 new Phaser.Game({
   type: Phaser.AUTO,

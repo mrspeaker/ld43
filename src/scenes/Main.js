@@ -1,3 +1,4 @@
+import Phaser from "../../lib/phaser.js";
 import { PeepSprite } from "../entities/Peep.js";
 import { CropSprite } from "../entities/Crop.js";
 import { PlotSprite } from "../entities/Plot.js";
@@ -8,8 +9,6 @@ import { CarSprite } from "../entities/Car.js";
 import PeepTypes from "../entities/PeepTypes.js";
 import Game from "../Game.js";
 import Events from "../Events.js";
-
-const Phaser = window.Phaser;
 
 const isIn = (go, minX, minY, maxX, maxY) => {
   return go.x >= minX && go.x < maxX && go.y >= minY && go.y < maxY;
@@ -602,7 +601,7 @@ class Main extends Phaser.Scene {
     const grow = peep.botany;
     let specialty =
       cook > 2 || grow > 2 ? (cook > grow ? "grill" : "farm") : "peep";
-      
+
     // Don't show the skins at the start... will confuse people
     if (this.time.now < 30000) {
       specialty = "peep";

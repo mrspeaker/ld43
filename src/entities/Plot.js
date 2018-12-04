@@ -1,12 +1,14 @@
+// PLOT: A plot of land on a farm.
+import Phaser from "../../lib/phaser.js";
 import Events from "../Events.js";
 import data from "../data.js";
 
-const SPRITE = 15;
+const SPRITESHEET_IDX = 15;
 
 export class PlotSprite extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, data) {
     super(scene, x, y, "chars");
-    this.setFrame(SPRITE);
+    this.setFrame(SPRITESHEET_IDX);
     this.setOrigin(0, 0);
     this.setInteractive();
     this._data = data;
@@ -32,11 +34,9 @@ class Plot {
       return;
     }
 
-    // const farmingSkill = griller._data.culinary * data.GRILLING_SKILL_MULTIPIER;
-    // this.grillTime -= (1 + grillerSkill);
-
+    // TODO: make farm actually use stats!
     this.progress = Math.min(100, this.progress + farmers.length * 5);
-    this._sprite.setFrame((((this.progress/100) * 5) | 0) + SPRITE);
+    this._sprite.setFrame((((this.progress/100) * 5) | 0) + SPRITESHEET_IDX);
     if (this.progress == 100) {
       this._sprite.visible = false;
       farmers.forEach(f => {
@@ -53,7 +53,7 @@ class Plot {
   addFarmer(peep) {
     if (this.farmers.length == 0) {
       // First farmer... lets go
-      this._sprite.setFrame(SPRITE);
+      this._sprite.setFrame(SPRITESHEET_IDX);
       this._sprite.visible = true;
       peep._sprite.anims.play("farm_action");
       peep.working = true;

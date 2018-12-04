@@ -1,4 +1,4 @@
-const Phaser = window.Phaser;
+import Phaser from "../../lib/phaser.js";
 const emitter = new Phaser.Events.EventEmitter();
 
 const Events = {

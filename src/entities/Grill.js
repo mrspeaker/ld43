@@ -1,4 +1,3 @@
-import Events from "../Events.js";
 import GrillStation from "./GrillStation.js";
 
 class Grill {

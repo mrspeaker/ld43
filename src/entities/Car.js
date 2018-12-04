@@ -1,3 +1,5 @@
+import Phaser from "../../lib/phaser.js";
+
 export class CarSprite extends Phaser.GameObjects.Sprite {
   constructor(scene, x, y, data) {
     super(scene, x, y, "car");
