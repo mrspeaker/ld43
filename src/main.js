@@ -1,5 +1,4 @@
 import Phaser from "../../lib/phaser.js";
-
 import MainScene from "./scenes/Main.js";
 
 new Phaser.Game({
@@ -10,11 +9,11 @@ new Phaser.Game({
   pixelArt: true,
   scene: [MainScene],
   callbacks: {
-    postBoot: function(game) {
-      var config = game.config;
-      var style = game.canvas.style;
-      style.width = 2.5 * config.width + "px";
-      style.height = 2.5 * config.height + "px";
+    postBoot: game => {
+      const { width, height } = game.config;
+      const style = game.canvas.style;
+      style.width = 2.5 * width + "px";
+      style.height = 2.5 * height + "px";
     }
   }
 });

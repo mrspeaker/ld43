@@ -38,7 +38,7 @@ const HoverableAreas = [
   ([x1, y1, x2, y2]) => new Phaser.Geom.Rectangle(x1, y1, x2 - x1, y2 - y1)
 );
 
-const PeepStats = {
+const PeepStatIdx = {
   CULINARY: 0,
   BOTANY: 1,
   TENDERNESS: 2,
@@ -126,22 +126,26 @@ class Main extends Phaser.Scene {
       })
     );
 
-    const title = this.add.bitmapText(0, 10, "font", "FARM TO TABLE");
+    const print = (x, y, msg) => {
+      return this.add.bitmapText(x, y, "font", msg);
+    };
+
+    const title = print(0, 10, "FARM TO TABLE");
     dialog.add(title);
     title.setTint(0xff00ff);
 
     // Peep Stats.
     const ps = this.add.container();
     ps.visible = false;
-    ps.add(this.add.bitmapText(0, 30, "font", "CULINARY: "));
-    ps.add(this.add.bitmapText(0, 40, "font", "BOTANY: "));
-    ps.add(this.add.bitmapText(0, 50, "font", "TENDERNESS: "));
-    ps.add(this.add.bitmapText(0, 60, "font", "VIRILITY: "));
+    ps.add(print(0, 30, "CULINARY: "));
+    ps.add(print(0, 40, "BOTANY: "));
+    ps.add(print(0, 50, "TENDERNESS: "));
+    ps.add(print(0, 60, "VIRILITY: "));
     const pstats = [
-      this.add.bitmapText(70, 30, "font", "0"),
-      this.add.bitmapText(70, 40, "font", "0"),
-      this.add.bitmapText(70, 50, "font", "0"),
-      this.add.bitmapText(70, 60, "font", "0")
+      print(70, 30, "0"),
+      print(70, 40, "0"),
+      print(70, 50, "0"),
+      print(70, 60, "0")
     ].map(p => {
       ps.add(p);
       p.setTint(0xff00ff);
@@ -154,23 +158,23 @@ class Main extends Phaser.Scene {
     };
 
     // The "moood"/score (TODO: not done! progress is meaningless!)
-    this.addGraphAndCharts();
-    this.add.bitmapText(140, 10, "font", "STEAKHOLDERS ARE");
-    const mood = this.add.bitmapText(160, 20, "font", this.game.mood.mood());
+    // this.addGraphAndCharts();
+    print(140, 10, "STEAKHOLDERS ARE");
+    const mood = print(160, 20, this.game.mood.mood());
     mood.setTint(0xff00ff);
 
     const setMood = () => {
-      this.game.mood.rnd(); // Lol.. don't tell anyone!
+      this.game.mood.rnd(); // Lol.. don't tell anyone! Random!
       mood.text = this.game.mood.mood();
       setTimeout(setMood, Phaser.Math.Between(6000, 22000));
     };
     setTimeout(setMood, Phaser.Math.Between(15000, 35000));
 
-    this.add.bitmapText(0, 84, "font", "JOB SEEKERS");
-    this.add.bitmapText(176, 126, "font", "LOVE SHACK");
-    this.add.bitmapText(1, 147, "font", "THE FARM");
-    this.add.bitmapText(156, 156, "font", "THE GRILL");
-    this.add.bitmapText(153, 259, "font", "THE GRINDER");
+    print(0, 84, "JOB SEEKERS");
+    print(176, 126, "LOVE SHACK");
+    print(1, 147, "THE FARM");
+    print(156, 156, "THE GRILL");
+    print(153, 259, "THE GRINDER");
 
     this.peeps = [...Array(10)].map((_, i) => {
       return this.createAPeepSprite(this.game.peeps[i]);
@@ -219,73 +223,77 @@ class Main extends Phaser.Scene {
   }
 
   createAnims() {
-    this.anims.create({
+    const { anims } = this;
+    const gen = (start, end, img = "peeps") =>
+      anims.generateFrameNumbers(img, { start, end });
+
+    anims.create({
       key: "peep_idle",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 0, end: 0 }),
+      frames: gen(0, 0),
       frameRate: 10,
       repeat: -1
     });
 
-    this.anims.create({
+    anims.create({
       key: "peep_action",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 0, end: 1 }),
+      frames: gen(0, 1),
       frameRate: 10,
       repeat: -1
     });
 
-    this.anims.create({
+    anims.create({
       key: "farm_idle",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 5, end: 5 }),
+      frames: gen(5, 5),
       frameRate: 5,
       repeat: -1
     });
 
-    this.anims.create({
+    anims.create({
       key: "farm_action",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 5, end: 6 }),
+      frames: gen(5, 6),
       frameRate: 5,
       repeat: -1
     });
 
-    this.anims.create({
+    anims.create({
       key: "grill_idle",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 10, end: 10 }),
+      frames: gen(10, 10),
       frameRate: 5,
       repeat: -1
     });
 
-    this.anims.create({
+    anims.create({
       key: "grill_action",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 10, end: 11 }),
+      frames: gen(10, 11),
       frameRate: 5,
       repeat: -1
     });
 
-    this.anims.create({
+    anims.create({
       key: "grinded",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 15, end: 24 }),
+      frames: gen(15, 24),
       frameRate: 10,
       repeat: 0
     });
 
-    this.anims.create({
-      key: "love",
-      frames: this.anims.generateFrameNumbers("chars", { start: 25, end: 29 }),
-      frameRate: 8,
-      repeat: -1
-    });
-
-    this.anims.create({
+    anims.create({
       key: "growup",
-      frames: this.anims.generateFrameNumbers("peeps", { start: 25, end: 29 }),
+      frames: gen(25, 29),
       frameRate: 1,
       repeat: 0
     });
 
-    this.anims.create({
+    anims.create({
       key: "belt_down",
-      frames: this.anims.generateFrameNumbers("chars", { start: 20, end: 23 }),
+      frames: gen(20, 23, "chars"),
       frameRate: 3,
+      repeat: -1
+    });
+
+    anims.create({
+      key: "love",
+      frames: gen(25, 29, "chars"),
+      frameRate: 8,
       repeat: -1
     });
   }
@@ -296,41 +304,30 @@ class Main extends Phaser.Scene {
     let dragSelected = false;
 
     this.input.on("pointermove", pointer => {
+      const { hoverHelper } = this;
       mouse.x = pointer.x;
       mouse.y = pointer.y;
 
-      this.hoverHelper.visible = false;
+      hoverHelper.visible = false;
       if (dragSelected) {
         // Check if hovering
         const mouseBounds = mouse.getBounds();
         HoverableAreas.forEach(rect => {
           const collide = Phaser.Geom.Rectangle.Overlaps(mouseBounds, rect);
           if (collide) {
-            this.hoverHelper.clear();
-            this.hoverHelper.lineStyle(1, 0x00ff00, 1);
-            this.hoverHelper.strokeRect(
+            hoverHelper.clear();
+            hoverHelper.lineStyle(1, 0x00ff00, 1);
+            hoverHelper.strokeRect(
               rect.x,
               rect.y,
               rect.width,
               rect.height
             );
-            this.hoverHelper.visible = true;
+            hoverHelper.visible = true;
           }
         });
       }
     });
-
-    this.input.on("pointerdown", pointer => {
-      //console.log(pointer.x, pointer.y);
-    });
-
-    // this.input.on("gameobjectout", (pointer, gameObject) => {
-    //   if (selected) {
-    //     selected.clearTint();
-    //     this.clearInfo();
-    //     selected = null;
-    //   }
-    // });
 
     this.input.on("gameobjectover", (pointer, gameObject) => {
       // Nothing selected
@@ -364,7 +361,7 @@ class Main extends Phaser.Scene {
         gameObject.downY = pointer.downY;
       }
 
-      // Nothing selected
+      // When selecting something from nothing
       if (!selected) {
         selected = gameObject;
         this.audio.mouse.play();
@@ -377,7 +374,8 @@ class Main extends Phaser.Scene {
         gameObject.downY = pointer.downY;
         return;
       }
-      // Error reverting if switch to different peep...
+
+      // For "reverting" if switch to different peep...
       if (selected !== gameObject) {
         gameObject.downX = pointer.downX;
         gameObject.downY = pointer.downY;
@@ -438,7 +436,6 @@ class Main extends Phaser.Scene {
   }
 
   addGraphAndCharts() {
-    return;
     const line1 = this.add.graphics();
     const line2 = this.add.graphics();
     line1.lineStyle(1, 0x00ff00, 1);
@@ -579,10 +576,10 @@ class Main extends Phaser.Scene {
 
     if (ent._data.type === "PEEP") {
       peepDisplay.visible = true;
-      peep[PeepStats.CULINARY].text = ent._data.culinary;
-      peep[PeepStats.BOTANY].text = ent._data.botany;
-      peep[PeepStats.TENDERNESS].text = ent._data.tenderness;
-      peep[PeepStats.VIRILITY].text = ent._data.virility;
+      peep[PeepStatIdx.CULINARY].text = ent._data.culinary;
+      peep[PeepStatIdx.BOTANY].text = ent._data.botany;
+      peep[PeepStatIdx.TENDERNESS].text = ent._data.tenderness;
+      peep[PeepStatIdx.VIRILITY].text = ent._data.virility;
     }
   }
 
@@ -610,6 +607,8 @@ class Main extends Phaser.Scene {
       specialty = "peep";
     }
     peepSprite.anims.play(`${specialty}_action`);
+
+    // Follow the queue line
     const timeline = this.tweens.createTimeline();
 
     let xo = Areas.Queue[2] - 10;
@@ -708,7 +707,6 @@ class Main extends Phaser.Scene {
 
     Events.on("newPlot", (plot, x, y) => {
       const sprite = new PlotSprite(this, x, y, plot);
-      //sprite.depth = 200;
       sprite.visible = false;
       this.add.existing(sprite);
       plot._sprite = sprite;
@@ -782,7 +780,8 @@ class Main extends Phaser.Scene {
       parent1.visible = true;
       parent2.visible = true;
       this.assignPeep(parent1, PeepTypes.UNASSIGNED);
-      // HACK: stagger return to queue
+
+      // Stagger second paren't return to queue
       setTimeout(() => {
         this.assignPeep(parent2, PeepTypes.UNASSIGNED);
       }, 800);
