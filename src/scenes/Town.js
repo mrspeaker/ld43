@@ -211,14 +211,16 @@ class Town extends Phaser.Scene {
         this.lastNoob = time;
       }
     } else {
-      // TODO: make new peeps take a (constant) while to grow up...
-      // slow the anim, and don't make the init flock use it.
-      if (Math.random() < 0.005) {
+      // TODO: slow the anim, and don't make the init flock use it.
+      if (Math.random() < 0.01) {
         const noobs = this.peeps.filter(
           p => p._data.peepType === PeepTypes.NOOB
         );
         if (noobs.length) {
-          this.assignPeep(noobs[0], PeepTypes.UNASSIGNED);
+          const bornAt = noobs[0]._data.bornAt || 0;
+          if (this.time.now - bornAt > 5000) {
+            this.assignPeep(noobs[0], PeepTypes.UNASSIGNED);
+          }
         }
       }
     }
@@ -242,7 +244,7 @@ class Town extends Phaser.Scene {
     anim("growup", range(25, 29), 1, 0);
 
     anim("belt_down", range(20, 23, "chars"), 3);
-    anims("love", range(25, 29, "chars"), 8);
+    anim("love", range(25, 29, "chars"), 8);
   }
 
   handlePointer(mouse) {
@@ -718,6 +720,7 @@ class Town extends Phaser.Scene {
     Events.on("newPeep", (baby, parent1, parent2) => {
       const peep = this.createAPeepSprite(baby);
       this.peeps.push(peep);
+      baby.bornAt = this.time.now;
       this.loveSprite.visible = false;
       parent1.visible = true;
       parent2.visible = true;
@@ -805,6 +808,16 @@ class Town extends Phaser.Scene {
     Events.on("groundPeep", () => {
       this.audio.pop.play();
     });
+
+    // const calcMood = () => {
+    //   console.log("canlcy");
+    // };
+    // Events.on("orderFilled", calcMood);
+    // Events.on("groundPeep", calcMood);
+    // Events.on("newPeep", calcMood);
+    // Events.on("newCrop", calcMood);
+    // Events.on("newCookedMeat", calcMood);
+    // Events.on("newBurger", calcMood);
   }
 }
 
