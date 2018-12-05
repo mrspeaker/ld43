@@ -1,4 +1,4 @@
-import Phaser from "../../lib/phaser.js";
+import Phaser from "../lib/phaser.js";
 import Town from "./scenes/Town.js";
 
 new Phaser.Game({
