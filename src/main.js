@@ -1,5 +1,5 @@
 import Phaser from "../../lib/phaser.js";
-import MainScene from "./scenes/Main.js";
+import Town from "./scenes/Town.js";
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -7,7 +7,7 @@ new Phaser.Game({
   height: 320,
   parent: "board",
   pixelArt: true,
-  scene: [MainScene],
+  scene: [Town],
   callbacks: {
     postBoot: game => {
       const { width, height } = game.config;

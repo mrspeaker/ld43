@@ -16,7 +16,8 @@ const moods = [
 
 class Mood {
   constructor() {
-    this.index = (moods.length / 2) | 0;
+    this.neutral = (moods.length / 2) | 0;
+    this.index = this.neutral;
   }
   mood() {
     const { index } = this;
@@ -24,8 +25,8 @@ class Mood {
   }
   change(amount) {
     const { index } = this;
-    this.index = (index + amount + moods.length) % moods.length;
-    return index;
+    this.index = Math.max(0, Math.min(moods.length - 1, index + amount));
+    return this.index;
   }
   inc() {
     return this.change(+1);

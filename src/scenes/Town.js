@@ -45,12 +45,12 @@ const PeepStatIdx = {
   VIRILITY: 3
 };
 
-class Main extends Phaser.Scene {
+class Town extends Phaser.Scene {
   constructor() {
-    super({ key: "Main" });
+    super({ key: "Town" });
 
     // TODO: REFACTOR! this class was mostly to sync the display
-    // with the Game, but it devolved - logic shared with Game and Main.
+    // with the Game, but it devolved - logic shared with Game and Town.
     this.handleCustomGameEvents();
   }
   preload() {
@@ -211,6 +211,8 @@ class Main extends Phaser.Scene {
         this.lastNoob = time;
       }
     } else {
+      // TODO: make new peeps take a (constant) while to grow up...
+      // slow the anim, and don't make the init flock use it.
       if (Math.random() < 0.005) {
         const noobs = this.peeps.filter(
           p => p._data.peepType === PeepTypes.NOOB
@@ -224,78 +226,23 @@ class Main extends Phaser.Scene {
 
   createAnims() {
     const { anims } = this;
-    const gen = (start, end, img = "peeps") =>
+    const range = (start, end, img = "peeps") =>
       anims.generateFrameNumbers(img, { start, end });
+    const anim = (key, frames, frameRate, repeat = -1) => {
+      return anims.create({ key, frames, frameRate, repeat });
+    };
 
-    anims.create({
-      key: "peep_idle",
-      frames: gen(0, 0),
-      frameRate: 10,
-      repeat: -1
-    });
+    anim("peep_idle", range(0, 0), 10);
+    anim("peep_action", range(0, 1), 10);
+    anim("farm_idle", range(5, 5), 5);
+    anim("farm_action", range(5, 6), 5);
+    anim("grill_idle", range(10, 10), 5);
+    anim("grill_action", range(10, 11), 5);
+    anim("grinded", range(15, 24), 10, 0);
+    anim("growup", range(25, 29), 1, 0);
 
-    anims.create({
-      key: "peep_action",
-      frames: gen(0, 1),
-      frameRate: 10,
-      repeat: -1
-    });
-
-    anims.create({
-      key: "farm_idle",
-      frames: gen(5, 5),
-      frameRate: 5,
-      repeat: -1
-    });
-
-    anims.create({
-      key: "farm_action",
-      frames: gen(5, 6),
-      frameRate: 5,
-      repeat: -1
-    });
-
-    anims.create({
-      key: "grill_idle",
-      frames: gen(10, 10),
-      frameRate: 5,
-      repeat: -1
-    });
-
-    anims.create({
-      key: "grill_action",
-      frames: gen(10, 11),
-      frameRate: 5,
-      repeat: -1
-    });
-
-    anims.create({
-      key: "grinded",
-      frames: gen(15, 24),
-      frameRate: 10,
-      repeat: 0
-    });
-
-    anims.create({
-      key: "growup",
-      frames: gen(25, 29),
-      frameRate: 1,
-      repeat: 0
-    });
-
-    anims.create({
-      key: "belt_down",
-      frames: gen(20, 23, "chars"),
-      frameRate: 3,
-      repeat: -1
-    });
-
-    anims.create({
-      key: "love",
-      frames: gen(25, 29, "chars"),
-      frameRate: 8,
-      repeat: -1
-    });
+    anim("belt_down", range(20, 23, "chars"), 3);
+    anims("love", range(25, 29, "chars"), 8);
   }
 
   handlePointer(mouse) {
@@ -317,12 +264,7 @@ class Main extends Phaser.Scene {
           if (collide) {
             hoverHelper.clear();
             hoverHelper.lineStyle(1, 0x00ff00, 1);
-            hoverHelper.strokeRect(
-              rect.x,
-              rect.y,
-              rect.width,
-              rect.height
-            );
+            hoverHelper.strokeRect(rect.x, rect.y, rect.width, rect.height);
             hoverHelper.visible = true;
           }
         });
@@ -866,4 +808,4 @@ class Main extends Phaser.Scene {
   }
 }
 
-export default Main;
+export default Town;
