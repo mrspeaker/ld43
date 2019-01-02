@@ -2,7 +2,7 @@
 
 *The supramundane, numinous hamburger experience.*
 
-[Play it.](https://mrspeaker.github.io/ld43/)
+[Play it.](https://mrspeaker.github.io/ld43/). [Ludum Dare #43 entry](https://ldjam.com/events/ludum-dare/43/farm-to-table).
 
 The Steakholders are angry, and they expect results. They - along with the humble and hard-working citizens of Farmtotabletown - have invested their faith in You. Faith in you, as their transcendental social and economic linchpin.
 
